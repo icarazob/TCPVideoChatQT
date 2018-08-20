@@ -41,43 +41,56 @@ TCPClient::TCPClient(int port, const char * ip)
 
 bool TCPClient::Connect()
 {
-	auto recieveMessageHandler = [this]()
+	const int c_maxIteration = 10;
+	int iteration = 0;
+	
+	while (iteration < c_maxIteration)
 	{
-		int messageSize = 0;
-
-		while (true)
+		if (connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
 		{
-			int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+			auto recieveMessageHandler = [this]() {
+				int messageSize = 0;
 
-			if (resultInt == SOCKET_ERROR)
-			{
-				std::cerr << "Error: recv int " << GetLastError() << std::endl;
-				exit(1);
-			}
-			
-			char *message = new char[messageSize + 1];
-			message[messageSize] = '\0';
+				while (true)
+				{
+					int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
-			int result = recv(m_connection, message, messageSize, NULL);
+					if (resultInt == SOCKET_ERROR)
+					{
+						std::cerr << "Error: recv int " << GetLastError() << std::endl;
 
-			if (result != SOCKET_ERROR)
-			{
-				std::cout << message << std::endl;
-			}
+						return;
+					}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+					char *message = new char[messageSize + 1];
+					message[messageSize] = '\0';
+
+					int result = recv(m_connection, message, messageSize, NULL);
+
+					if (result != SOCKET_ERROR)
+					{
+						std::cout << message << std::endl;
+
+						return;
+					}
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				}
+
+			};
+
+			std::thread td(recieveMessageHandler);
+
+			td.detach();
+
+			return true;
 		}
 
-	};
-
-	if (connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
-	{
-		std::thread td(recieveMessageHandler);
-
-		td.detach();
-
-		return true;
+		std::cout << "Client can't connected!" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		++iteration;
 	}
+	
 
 
 

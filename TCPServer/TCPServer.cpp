@@ -36,7 +36,13 @@ void TCPServer::Run()
 			if (resultInt == SOCKET_ERROR)
 			{
 				std::cerr << "Error: recv int" << GetLastError() <<std:: endl;
-				exit(1);
+
+				//Delete client from container
+				{
+					std::lock_guard<std::mutex> lock(m_mutex);
+					m_clients.erase(m_clients.begin() + clientNumber);
+				}
+				return;
 			}
 
 			char *message = new char[message_size +1];
@@ -63,7 +69,6 @@ void TCPServer::Run()
 				}
 				delete[]message;
 			}
-
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
