@@ -1,6 +1,8 @@
+#pragma once
 #include "TCPClient.h"
 #include <iostream>
-
+#include <thread>
+#include <chrono>
 
 
 
@@ -10,8 +12,16 @@ int main()
 
 	if (client.Connect())
 	{
-		std::cout << "Connect" << std::endl;
-		client.RecieveMessage();
+		std::string msg;
+
+		while (true)
+		{
+			std::getline(std::cin, msg);
+			client.SendMessage(msg);
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+		}
 	}
 
 

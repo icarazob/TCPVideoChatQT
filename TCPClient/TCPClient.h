@@ -17,11 +17,12 @@ public:
 	bool Connect();
 
 	void RecieveMessage();
+	void SendMessage(std::string message);
 
 private:
-	WSADATA wsaData;
-	SOCKADDR_IN addr;
-	SOCKET connection;
-	int port;
-	std::string ip;
+	WSADATA m_wsaData;
+	SOCKADDR_IN m_addr;
+	SOCKET m_connection;
+	int m_port;
+	std::string m_ip;
 };

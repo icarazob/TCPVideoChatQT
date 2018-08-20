@@ -1,9 +1,12 @@
 #include "TCPClient.h"
+#include <thread>
+#include <chrono>
+
 
 void TCPClient::InitializeWSA()
 {
 	WORD version = MAKEWORD(2, 1);
-	if (WSAStartup(version, &wsaData) != 0)
+	if (WSAStartup(version, &m_wsaData) != 0)
 	{
 		std::cerr << "WSA error " << GetLastError() << std::endl;
 		exit(1);
@@ -12,8 +15,8 @@ void TCPClient::InitializeWSA()
 
 void TCPClient::CreateSocket()
 {
-	connection = socket(AF_INET, SOCK_STREAM, NULL);
-	if (connection == SOCKET_ERROR)
+	m_connection = socket(AF_INET, SOCK_STREAM, NULL);
+	if (m_connection == SOCKET_ERROR)
 	{
 		std::cout << "Can't create a socket" << GetLastError() << std::endl;
 		exit(1);
@@ -23,14 +26,14 @@ void TCPClient::CreateSocket()
 
 TCPClient::TCPClient(int port, const char * ip)
 {
-	this->port = port;
-	this->ip = ip;
+	this->m_port = port;
+	this->m_ip = ip;
 	
 	InitializeWSA();
 
-	addr.sin_addr.s_addr = inet_addr(ip);
-	addr.sin_port = htons(port);
-	addr.sin_family = AF_INET;
+	m_addr.sin_addr.s_addr = inet_addr(ip);
+	m_addr.sin_port = htons(port);
+	m_addr.sin_family = AF_INET;
 
 	CreateSocket();
 
@@ -38,10 +41,45 @@ TCPClient::TCPClient(int port, const char * ip)
 
 bool TCPClient::Connect()
 {
-	if (connect(connection, (SOCKADDR*)&addr, sizeof(addr)) == 0)
+	auto recieveMessageHandler = [this]()
 	{
+		int messageSize = 0;
+
+		while (true)
+		{
+			int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+			if (resultInt == SOCKET_ERROR)
+			{
+				std::cerr << "Error: recv int " << GetLastError() << std::endl;
+				exit(1);
+			}
+			
+			char *message = new char[messageSize + 1];
+			message[messageSize] = '\0';
+
+			int result = recv(m_connection, message, messageSize, NULL);
+
+			if (result != SOCKET_ERROR)
+			{
+				std::cout << message << std::endl;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
+	};
+
+	if (connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
+	{
+		std::thread td(recieveMessageHandler);
+
+		td.detach();
+
 		return true;
 	}
+
+
 
 
 	return false;
@@ -50,9 +88,18 @@ bool TCPClient::Connect()
 
 void TCPClient::RecieveMessage()
 {
-	char buffer[4096];
+	int messageSize = 0;
+	int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
-	int result = recv(connection, buffer, sizeof(buffer), NULL);
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Error: recv message!" << std::endl;
+		exit(1);
+	}
+	char *buffer = new char[messageSize + 1];
+	buffer[messageSize] = '\0';
+
+	int result = recv(m_connection, buffer, messageSize, NULL);
 	if (result == SOCKET_ERROR)
 	{
 		std::cerr << "Error: recv message!" << std::endl;
@@ -61,4 +108,25 @@ void TCPClient::RecieveMessage()
 
 	std::cout << buffer << std::endl;
 	return;
+}
+
+void TCPClient::SendMessage(std::string message)
+{
+	int messageSize = message.size();
+
+	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		exit(1);
+	}
+
+	int result = send(m_connection, message.c_str(), messageSize, NULL);
+
+	if (result == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		exit(1);
+	}
 }
