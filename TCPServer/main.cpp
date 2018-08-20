@@ -1,11 +1,6 @@
 #pragma once
 #include "TCPServer.h"
 #include <iostream>
-#include <thread>
-
-
-
-
 
 
 
@@ -16,7 +11,12 @@ int main()
 
 	TCPServer server { port,ip.c_str() };
 
-	server.Run();
+	if (!server.Run())
+	{
+		std::cerr << "Can't accept a new client!" << std::endl;
+		return 1;
+	}
+	
 
 	
 	return 0;

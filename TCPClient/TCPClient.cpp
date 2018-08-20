@@ -13,6 +13,38 @@ void TCPClient::InitializeWSA()
 	}
 }
 
+std::function<void (void)> TCPClient::CreateMessageHandler()
+{
+	return [this]() {
+		int messageSize = 0;
+
+		while (true)
+		{
+			int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+			if (resultInt == SOCKET_ERROR)
+			{
+				std::cerr << "Error: recv int " << GetLastError() << std::endl;
+
+				return;
+			}
+
+			char *message = new char[messageSize + 1];
+			message[messageSize] = '\0';
+
+			int result = recv(m_connection, message, messageSize, NULL);
+
+			if (result != SOCKET_ERROR)
+			{
+				std::cout << message << std::endl;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
+	};
+}
+
 void TCPClient::CreateSocket()
 {
 	m_connection = socket(AF_INET, SOCK_STREAM, NULL);
@@ -44,43 +76,16 @@ bool TCPClient::Connect()
 	const int c_maxIteration = 10;
 	int iteration = 0;
 	
-	while (iteration < c_maxIteration)
+	while (iteration <= c_maxIteration)
 	{
 		if (connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
 		{
-			auto recieveMessageHandler = [this]() {
-				int messageSize = 0;
-
-				while (true)
-				{
-					int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
-
-					if (resultInt == SOCKET_ERROR)
-					{
-						std::cerr << "Error: recv int " << GetLastError() << std::endl;
-
-						return;
-					}
-
-					char *message = new char[messageSize + 1];
-					message[messageSize] = '\0';
-
-					int result = recv(m_connection, message, messageSize, NULL);
-
-					if (result != SOCKET_ERROR)
-					{
-						std::cout << message << std::endl;
-
-						return;
-					}
-
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				}
-
-			};
-
+			std::function<void(void)> recieveMessageHandler = CreateMessageHandler();
+			
+			//Create thread
 			std::thread td(recieveMessageHandler);
-
+			
+			//detach thread
 			td.detach();
 
 			return true;

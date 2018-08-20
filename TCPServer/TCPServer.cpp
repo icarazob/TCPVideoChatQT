@@ -17,63 +17,15 @@ TCPServer::TCPServer(int port, const char * ip)
 	m_addr.sin_family = AF_INET;
 
 	CreateBindListenSocket();
-
 }
 
-void TCPServer::Run()
+bool TCPServer::Run()
 {
 	const std::string c_welcome = "WELCOME!";
 	std::cout << "Server start!" << std::endl;
 	ShowServerInformation();
 
-	auto functionThread = [this](int clientNumber)
-	{
-		int message_size = 0;
-		while (true)
-		{
-			int resultInt = recv(m_clients[clientNumber],(char*)&message_size, sizeof(int), NULL);
-
-			if (resultInt == SOCKET_ERROR)
-			{
-				std::cerr << "Error: recv int" << GetLastError() <<std:: endl;
-
-				//Delete client from container
-				{
-					std::lock_guard<std::mutex> lock(m_mutex);
-					m_clients.erase(m_clients.begin() + clientNumber);
-				}
-				return;
-			}
-
-			char *message = new char[message_size +1];
-			message[message_size] = '\0';
-
-			int result = recv(m_clients[clientNumber], message, message_size, NULL);
-
-			{
-				std::lock_guard<std::mutex> lock(m_mutex);
-
-				if (result != SOCKET_ERROR)
-				{
-					std::cout << "Client " << clientNumber << ": " << message << std::endl;
-					for (auto i = 0; i < m_clients.size(); i++)
-					{
-						if (i == clientNumber)
-						{
-							continue;
-						}
-
-						send(m_clients[i], message, message_size, NULL);
-					}
-
-				}
-				delete[]message;
-			}
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
-		}
-	};
-
+	std::function<void (int)> funThread = CreateHandler();
 	int sizeOfAddr = sizeof(m_addr);
 
 	while (true)
@@ -84,23 +36,25 @@ void TCPServer::Run()
 			std::cout << "Client connected!" << std::endl;
 			SendMessage(newClient, c_welcome);
 			
-
 			//Add new client to container
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 				m_clients.push_back(newClient);
 			}
-
 			//Create thread for new client
-			std::thread td(functionThread,m_clients.size()-1);
+			std::thread td(funThread, m_clients.size() - 1);
 
 			//detach thread
 			td.detach();
-
+		}
+		else
+		{
+			return false;
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+
 }
 
 void TCPServer::ShowServerInformation()
@@ -110,11 +64,6 @@ void TCPServer::ShowServerInformation()
 	std::cout << "Port: " << m_port << "\n";
 
 	return;
-}
-
-void TCPServer::Igor()
-{
-
 }
 
 TCPServer::~TCPServer()
@@ -163,7 +112,6 @@ void TCPServer::SendMessage(SOCKET client, const std::string message)
 	if (resultInt == SOCKET_ERROR)
 	{
 		std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
-		exit(1);
 	}
 
 	int result = send(client, message.c_str(), messageSize, NULL);
@@ -171,6 +119,62 @@ void TCPServer::SendMessage(SOCKET client, const std::string message)
 	if (result == SOCKET_ERROR)
 	{
 		std::cerr << "Don't send message for client" << GetLastError() << std::endl;
-		exit(1);
 	}
+}
+
+void TCPServer::DeleteClient(SOCKET client)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	auto position = std::find(m_clients.begin(), m_clients.end(), client);
+	m_clients.erase(position);
+
+	return;
+}
+
+std::function<void (int)> TCPServer::CreateHandler()
+{
+	return  [this](int clientNumber)
+	{
+		SOCKET client = m_clients[clientNumber];
+
+		int message_size = 0;
+		while (true)
+		{
+			int resultInt = recv(client, (char*)&message_size, sizeof(int), NULL);
+
+			if (resultInt == SOCKET_ERROR)
+			{
+				std::cerr << "Client disconnect " << GetLastError() << std::endl;
+				DeleteClient(client);
+				return;
+			}
+
+			char *message = new char[message_size + 1];
+			message[message_size] = '\0';
+
+			int result = recv(client, message, message_size, NULL);
+
+
+			if (result != SOCKET_ERROR)
+			{
+				std::cout << "Client " << clientNumber << ": " << message << std::endl;
+
+				std::lock_guard<std::mutex> lock(m_mutex);
+
+				for (auto i = 0; i < m_clients.size(); i++)
+				{
+					if (m_clients[i] == client)
+					{
+						continue;
+					}
+
+					SendMessage(m_clients[i], message);
+				}
+
+			}
+			delete[]message;
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		}
+	};
 }

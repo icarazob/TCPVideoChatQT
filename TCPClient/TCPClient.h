@@ -3,13 +3,14 @@
 #pragma comment(lib,"ws2_32.lib")
 #include <WinSock2.h>
 #include <string>
+#include <functional>
 
 
 
 class TCPClient {
 private:
 	void InitializeWSA();
-
+	std::function<void (void)> CreateMessageHandler();
 	void CreateSocket();
 public:
 	TCPClient(int port, const char *ip);
