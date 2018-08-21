@@ -158,7 +158,6 @@ std::function<void (int)> TCPServer::CreateHandler()
 
 			if (result != SOCKET_ERROR)
 			{
-				std::cout << "Client " << clientNumber << ": " << message << std::endl;
 
 				std::lock_guard<std::mutex> lock(m_mutex);
 
