@@ -154,7 +154,7 @@ std::function<void (int)> TCPServer::CreateHandler()
 			message[message_size] = '\0';
 
 			int result = recv(client, message, message_size, NULL);
-
+			std::cout << message << std::endl;
 
 			if (result != SOCKET_ERROR)
 			{

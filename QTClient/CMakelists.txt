@@ -7,17 +7,31 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(QT5 REQUIRED COMPONENTS Core Gui)
 
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+
+set(file_settings 
+	${PROJECT_SOURCE_DIR}/settings/XMLsettings.xml
+)
+ 
+foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
+	file(COPY ${file_settings} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/settings)
+endforeach()
 
 set(project_ui
 	mainwindow.ui
+	loginwindow.ui
 )
 set(SOURCES
 	main.cpp
 	mainwindow.cpp
+	TCPClient.cpp
+	loginwindow.cpp
 )
 
 set(HEADERS
 	mainwindow.h
+	TCPClient.h
+	loginwindow.h
 )
 
 qt5_wrap_ui(project_headers_wrapped ${project_ui})
