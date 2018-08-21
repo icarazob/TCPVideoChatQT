@@ -11,6 +11,11 @@
 
 class TCPClient: public QObject{
 	Q_OBJECT
+public:
+	enum TypePackage {
+		P_ChatMessage=0,
+		P_ChatVideo
+	};
 private:
 	void InitializeWSA();
 	std::function<void (void)> CreateMessageHandler();

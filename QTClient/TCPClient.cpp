@@ -41,7 +41,10 @@ std::function<void (void)> TCPClient::CreateMessageHandler()
 
 			Q_EMIT recieveEvent(message);
 
+			
+
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			delete[]message;
 		}
 
 	};
@@ -122,6 +125,8 @@ void TCPClient::RecieveMessage()
 		std::cerr << "Error: recv message!" << std::endl;
 		exit(1);
 	}
+
+	delete[]buffer;
 	//Append Message
 
 
@@ -132,6 +137,15 @@ void TCPClient::RecieveMessage()
 
 void TCPClient::SendMessage(std::string message) const
 {
+	TypePackage typePackage = P_ChatMessage;
+
+	int resultPackage = send(m_connection, (char*)&typePackage, sizeof(typePackage), NULL);
+	if (resultPackage == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		exit(1);
+	}
+
 	std::string tempName = m_name + ": ";
 	std::string mesageWithName = message.insert(0, tempName);
 	int messageSize = mesageWithName.size();

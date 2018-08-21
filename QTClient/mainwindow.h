@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "TCPClient.h"
 #include "loginwindow.h"
+#include <functional>
 
 namespace Ui {
 class MainWindow;
@@ -12,7 +13,8 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+private:
+	std::function<void (void)> GetVideoHandler();
 public:
     explicit MainWindow(QString port, QString ip, QString name);
     ~MainWindow();
