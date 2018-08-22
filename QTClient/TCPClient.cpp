@@ -3,6 +3,31 @@
 #include <chrono>
 #include <QMessageBox>
 
+bool TCPClient::ProcessPacket(PacketType & packet)
+{
+	int resultPacket = recv(m_connection, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		return false;
+	}
+
+	switch (packet)
+	{
+	case P_ChatMessage:
+		RecieveMessage();
+		break;
+	case P_FrameMessage:
+
+		break;
+	default:
+		return false;
+		break;
+	}
+
+	return true;
+}
+
 void TCPClient::InitializeWSA()
 {
 	WORD version = MAKEWORD(2, 1);
@@ -13,38 +38,20 @@ void TCPClient::InitializeWSA()
 	}
 }
 
-std::function<void (void)> TCPClient::CreateMessageHandler()
+std::function<void (void)> TCPClient::CreateProcessHandler()
 {
 	return [this]() {
-		int messageSize = 0;
 
 		while (true)
 		{
-			int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+			PacketType packet;
 
-			if (resultInt == SOCKET_ERROR)
+			if (!ProcessPacket(packet))
 			{
-				std::cerr << "Error: recv int " << GetLastError() << std::endl;
-
 				return;
 			}
 
-			char *message = new char[messageSize + 1];
-			message[messageSize] = '\0';
-
-			int result = recv(m_connection, message, messageSize, NULL);
-
-			if (result != SOCKET_ERROR)
-			{
-				//std::cout << message << std::endl;
-			}
-
-			Q_EMIT recieveEvent(message);
-
-			
-
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			delete[]message;
 		}
 
 	};
@@ -86,10 +93,9 @@ bool TCPClient::Connect()
 	{
 		if (::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
 		{
-			std::function<void(void)> recieveMessageHandler = CreateMessageHandler();
 			
 			//Create thread
-			std::thread td(recieveMessageHandler);
+			std::thread td(CreateProcessHandler());
 			
 			//detach thread
 			td.detach();
@@ -126,7 +132,9 @@ void TCPClient::RecieveMessage()
 		exit(1);
 	}
 
-	delete[]buffer;
+	Q_EMIT recieveEvent(buffer);
+
+	//delete[]buffer;
 	//Append Message
 
 
@@ -134,16 +142,17 @@ void TCPClient::RecieveMessage()
 	
 	return;
 }
-
-void TCPClient::SendMessage(std::string message) const
+void TCPClient::SendMessage(std::string message)
 {
-	TypePackage typePackage = P_ChatMessage;
+	std::lock_guard<std::mutex> lock(m_mutex);
 
-	int resultPackage = send(m_connection, (char*)&typePackage, sizeof(typePackage), NULL);
-	if (resultPackage == SOCKET_ERROR)
+	PacketType packet = P_ChatMessage;
+
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+	if(resultPacket == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
-		exit(1);
+		std::cerr << "Can't send packet message" << GetLastError() << std::endl;
+		return;
 	}
 
 	std::string tempName = m_name + ": ";
@@ -155,7 +164,7 @@ void TCPClient::SendMessage(std::string message) const
 	if (resultInt == SOCKET_ERROR)
 	{
 		std::cerr << "Can't send message" << GetLastError() << std::endl;
-		exit(1);
+		return;
 	}
 
 	int result = send(m_connection, mesageWithName.c_str(), messageSize, NULL);
@@ -163,6 +172,39 @@ void TCPClient::SendMessage(std::string message) const
 	if (result == SOCKET_ERROR)
 	{
 		std::cerr << "Can't send message" << GetLastError() << std::endl;
-		exit(1);
+		return;
 	}
+}
+
+void TCPClient::SendFrame(cv::Mat frame)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	PacketType packet = P_FrameMessage;
+	//packet
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		return;
+	}
+	frame = (frame.reshape(0, 1));
+	int imgSize = frame.total() * frame.elemSize();
+
+	//send int
+	int resultInt = send(m_connection, (char*)&imgSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		return;
+	}
+	//send frame
+	int resultFrame = send(m_connection,(char*)(frame.data), imgSize, NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		return;
+	}
+	
+	return;
 }

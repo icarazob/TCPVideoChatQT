@@ -10,12 +10,22 @@
 
 class TCPServer {
 private:
+	enum PacketType {
+		P_ChatMessage,
+		P_FrameMessage
+	};
+
+
+	bool ProcessPacket(SOCKET client,PacketType &packet);
 	void InitializeWSA();
 	void CreateBindListenSocket();
 	void SendMessage(SOCKET client, const std::string message);
+	bool RecieveMessage(SOCKET client, std::string &message);
 	void DeleteClient(SOCKET client);
 	std::function<void (int)> CreateHandler();
 	void ShowServerInformation();
+	void RecieveFrameAndShow(SOCKET client);
+	void ShowFrame(char *frame);
 
 public:
 	TCPServer(int port, const char *ip);

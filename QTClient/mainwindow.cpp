@@ -15,7 +15,11 @@ MainWindow::MainWindow(QString port, QString ip, QString name) :
 {
 	ui->setupUi(this);
 
-	m_client = new TCPClient(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(),m_name.toUtf8().constData());
+
+	m_client = std::make_shared<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(),m_name.toUtf8().constData());
+
+	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
+
 
 	if (!m_client->Connect())
 	{
@@ -25,11 +29,13 @@ MainWindow::MainWindow(QString port, QString ip, QString name) :
 	std::thread videoThread(GetVideoHandler());
 	videoThread.detach();
 
+
+
 	ui->nameLabel->setText(name);
-	QObject::connect(m_client, SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
 	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SLOT(exit()));
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
-	
+
+	/*	QObject::connect(ui->, SIGNAL(returnPressed()), SLOT(UpdatePlain()));*/
 /*	QObject::connect(ui->actionLogin, SIGNAL(triggered()), SLOT(ShowLoginWindow()));*/
 
 }
@@ -55,7 +61,7 @@ std::function<void (void)> MainWindow::GetVideoHandler()
 			std::cerr << "Video can't start! " << GetLastError() << std::endl;
 			return;
 		}
-
+		int count = 0;
 		while (true)
 		{
 			bool successReadFrame = capture.read(frame);
@@ -66,6 +72,7 @@ std::function<void (void)> MainWindow::GetVideoHandler()
 			}
 
 			cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
+			m_client->SendFrame(frame);
 			cv::cvtColor(frame, frame,CV_BGR2RGB);
 			ui->label->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
 			char c = cv::waitKey(25);
@@ -74,6 +81,8 @@ std::function<void (void)> MainWindow::GetVideoHandler()
 			{
 				break;
 			}
+
+			count++;
 		}
 
 		capture.release();

@@ -5,6 +5,8 @@
 #include "TCPClient.h"
 #include "loginwindow.h"
 #include <functional>
+#include <memory>
+
 
 namespace Ui {
 class MainWindow;
@@ -21,7 +23,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-	TCPClient *m_client;
+	std::shared_ptr<TCPClient> m_client;
 	QString m_ip;
 	QString m_port;
 	QString m_name;

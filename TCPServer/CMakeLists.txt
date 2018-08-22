@@ -2,6 +2,9 @@ SET(execName TCPServer)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 PROJECT(${execName})
 
+set(OpenCV_DIR "C:/opencv340/opencv/build")
+
+find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
 
 SET (SOURCES 
 	TCPServer.cpp
@@ -19,8 +22,14 @@ SET (HEADERS
 #link_directories(${ZED_LIBRARY_DIR})
 #link_directories(${CUDA_LIBRARY_DIRS})
 
+include_directories( ${OpenCV_INCLUDE_DIRS})
 ADD_EXECUTABLE(${execName} ${SOURCES} ${HEADERS})
+
+target_link_libraries(${execName}
+		${OpenCV_LIBS}
+	)
 add_definitions(-std=c++11 -g -O3)
+
 
 #TARGET_LINK_LIBRARIES(${execName}
  #                       ${ZED_LIBRARIES}

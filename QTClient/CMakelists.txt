@@ -3,10 +3,11 @@ cmake_minimum_required ( VERSION 3.10.0 FATAL_ERROR)
 project(HelloQt)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(OpenCV_DIR "C:/opencv340/opencv/build")
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(QT5 REQUIRED COMPONENTS Core Gui)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 

@@ -6,27 +6,32 @@
 #include <functional>
 #include <QObject>
 #include <QString>
+#include <opencv2/opencv.hpp>
+#include <mutex>
 
 
 
 class TCPClient: public QObject{
 	Q_OBJECT
 public:
-	enum TypePackage {
-		P_ChatMessage=0,
-		P_ChatVideo
+	enum PacketType {
+		P_ChatMessage,
+		P_FrameMessage
 	};
 private:
+	bool ProcessPacket(PacketType &packet);
 	void InitializeWSA();
-	std::function<void (void)> CreateMessageHandler();
+	std::function<void (void)> CreateProcessHandler();
 	void CreateSocket();
+
 public:
 	TCPClient(int port, const char *ip,std::string name);
 
 	bool Connect();
 
 	void RecieveMessage();
-	void SendMessage(std::string message) const;
+	void SendMessage(std::string message);
+	void SendFrame(cv::Mat frame);
 signals:
 	void recieveEvent(QString message);
 private:
@@ -36,4 +41,5 @@ private:
 	int m_port;
 	std::string m_name;
 	std::string m_ip;
+	std::mutex m_mutex;
 };
