@@ -2,7 +2,7 @@ SET(execName TCPServer)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 PROJECT(${execName})
 
-set(OpenCV_DIR "C:/opencv340/opencv/build")
+set(OpenCV_DIR ""C:/opencv/build"")
 
 find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
 

@@ -108,6 +108,11 @@ QString loginwindow::GetClientName()
 	return m_name;
 }
 
+std::shared_ptr<TCPClient> loginwindow::GetTCPClient()
+{
+	return m_client;
+}
+
 bool loginwindow::CheckOnValidInputData()
 {
 	if (!CheckName())
@@ -141,7 +146,22 @@ void loginwindow::exit()
 	
 	if (CheckOnValidInputData())
 	{
-		this->close();
+		m_client = std::make_shared<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(), m_name.toUtf8().constData());
+
+		if (m_client->Connect())
+		{
+			this->close();
+		}
+		else
+		{
+			if (ui->connectLabel->text().isEmpty())
+			{
+				ui->connectLabel->setText("Can't connected!");
+				ui->connectLabel->setStyleSheet("color:red");
+			}
+
+		}
+		
 	}
 	else
 	{

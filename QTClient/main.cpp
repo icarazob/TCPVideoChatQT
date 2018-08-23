@@ -13,9 +13,15 @@ int main(int argc, char *argv[])
 
 	loginwindow loginWindow;
 	loginWindow.exec();
-
 	
-	MainWindow mainwindow(loginWindow.GetClientPort(),loginWindow.GetClientIp(),loginWindow.GetClientName());
+	
+	MainWindow mainwindow(
+		loginWindow.GetClientPort(),
+		loginWindow.GetClientIp(),
+		loginWindow.GetClientName(),
+		loginWindow.GetTCPClient()
+	);
+
 	mainwindow.show();
 
 

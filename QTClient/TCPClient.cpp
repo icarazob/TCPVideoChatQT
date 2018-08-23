@@ -3,6 +3,7 @@
 #include <chrono>
 #include <QMessageBox>
 
+
 bool TCPClient::ProcessPacket(PacketType & packet)
 {
 	int resultPacket = recv(m_connection, (char*)&packet, sizeof(packet), NULL);
@@ -18,7 +19,7 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 		RecieveMessage();
 		break;
 	case P_FrameMessage:
-
+		RecieveFrame();
 		break;
 	default:
 		return false;
@@ -86,28 +87,20 @@ TCPClient::TCPClient(int port, const char * ip,std::string name)
 
 bool TCPClient::Connect()
 {
-	const int c_maxIteration = 10;
-	int iteration = 0;
-	
-	while (iteration <= c_maxIteration)
+
+	if (::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
 	{
-		if (::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
-		{
-			
-			//Create thread
-			std::thread td(CreateProcessHandler());
-			
-			//detach thread
-			td.detach();
 
-			return true;
-		}
+		//Create thread
+		std::thread td(CreateProcessHandler());
 
-		//std::cout << "Client can't connected!" << std::endl;
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		++iteration;
+		//detach thread
+		td.detach();
+
+		return true;
 	}
-	
+
+
 	return false;
 
 }
@@ -207,4 +200,37 @@ void TCPClient::SendFrame(cv::Mat frame)
 	}
 	
 	return;
+}
+
+cv::Mat TCPClient::GetCurrentFrame()
+{
+	return m_currentFrame;
+}
+
+void TCPClient::RecieveFrame()
+{
+	cv::Mat recieveFrame = cv::Mat::zeros(361, 441, CV_8UC3);
+	char* uptr = (char*)recieveFrame.data;
+
+	int frameSize;
+	int resultInt = recv(m_connection, (char*)&frameSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	int resultFrame = recv(m_connection, uptr, frameSize, MSG_WAITALL);
+
+	if (resultFrame == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	m_currentFrame = recieveFrame.clone();
+	Q_EMIT recieveEventFrame();
+
+
+	return;
+
 }

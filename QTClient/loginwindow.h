@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QString>
+#include <memory>
+#include "TCPClient.h"
 
 namespace Ui {
 class loginwindow;
@@ -23,6 +25,8 @@ public:
 	QString GetClientPort();
 	QString GetClientName();
 
+	std::shared_ptr<TCPClient> GetTCPClient();
+
 	bool CheckOnValidInputData();
 
     ~loginwindow();
@@ -32,6 +36,7 @@ private:
 	QString m_ip;
 	QString m_port;
 	QString m_name;
+	std::shared_ptr<TCPClient> m_client;
 public slots:
 	void exit();
 };

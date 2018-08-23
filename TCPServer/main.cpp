@@ -7,7 +7,7 @@
 int main()
 {
 	const int port = 5000;
-	std::string ip = "127.0.0.1";
+	std::string ip = "ADDR_ANY";
 
 	TCPServer server { port,ip.c_str() };
 

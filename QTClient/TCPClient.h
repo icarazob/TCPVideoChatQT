@@ -23,7 +23,7 @@ private:
 	void InitializeWSA();
 	std::function<void (void)> CreateProcessHandler();
 	void CreateSocket();
-
+	void RecieveFrame();
 public:
 	TCPClient(int port, const char *ip,std::string name);
 
@@ -32,8 +32,12 @@ public:
 	void RecieveMessage();
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
+	
+	cv::Mat GetCurrentFrame();
+	
 signals:
 	void recieveEvent(QString message);
+	void recieveEventFrame();
 private:
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
@@ -42,4 +46,5 @@ private:
 	std::string m_name;
 	std::string m_ip;
 	std::mutex m_mutex;
+	cv::Mat m_currentFrame;
 };

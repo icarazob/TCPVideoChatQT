@@ -13,7 +13,7 @@ TCPServer::TCPServer(int port, const char * ip)
 	this->m_port = port;
 	InitializeWSA();
 
-	m_addr.sin_addr.s_addr = inet_addr(ip);
+	m_addr.sin_addr.s_addr = ADDR_ANY;
 	m_addr.sin_port = htons(port);
 	m_addr.sin_family = AF_INET;
 
@@ -65,7 +65,7 @@ void TCPServer::ShowServerInformation()
 	return;
 }
 
-void TCPServer::RecieveFrameAndShow(SOCKET client)
+cv::Mat TCPServer::RecieveFrame(SOCKET client)
 {
 	cv::Mat recieveFrame = cv::Mat::zeros(361,441,CV_8UC3);
 	char* uptr = (char*)recieveFrame.data;
@@ -79,7 +79,7 @@ void TCPServer::RecieveFrameAndShow(SOCKET client)
 	{
 		std::cerr << "Client disconnect " << GetLastError() << std::endl;
 		DeleteClient(client);
-		return;
+		return cv::Mat::zeros(cv::Size(0, 0), CV_8UC1);
 	}
 	//recieve char
 	int resultFrame = recv(client, uptr, frameSize, MSG_WAITALL);
@@ -87,21 +87,42 @@ void TCPServer::RecieveFrameAndShow(SOCKET client)
 	if (resultFrame == SOCKET_ERROR)
 	{
 		std::cerr << "Error: recieve frame!" << std::endl;
+		DeleteClient(client);
+		return cv::Mat::zeros(cv::Size(0, 0), CV_8UC1);
+	}
+
+	return recieveFrame;
+}
+
+void TCPServer::SendFrame(SOCKET client,cv::Mat frame)
+{
+	PacketType packet = P_FrameMessage;
+
+	int resultPacket = send(client, (char*)&packet, sizeof(packet), NULL);
+	if (resultPacket == SOCKET_ERROR)
+	{
+		std::cerr << "Don't send a packet message" << GetLastError() << std::endl;
 		return;
 	}
 
-	//show
-	cv::imshow("Video", recieveFrame);
+	frame = (frame.reshape(0, 1));
+	int imgSize = frame.total() * frame.elemSize();
 
-	cv::waitKey(25);
+	int resultInt = send(client, (char*)&imgSize, sizeof(int), NULL);
 
-	return;
-}
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
+		return;
+	}
 
-void TCPServer::ShowFrame(char * frame)
-{
+	int result = send(client, (char*)frame.data, imgSize, NULL);
 
-
+	if (result == SOCKET_ERROR)
+	{
+		std::cerr << "Don't send message for client" << GetLastError() << std::endl;
+		return;
+	}
 
 }
 
@@ -122,6 +143,7 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 		return false;
 	}
 
+	cv::Mat frame;
 	std::string message;
 	switch (packet)
 	{
@@ -144,7 +166,21 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 
 		break;
 	case P_FrameMessage:
-		RecieveFrameAndShow(client);
+		frame = RecieveFrame(client);
+
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+
+			for (auto i = 0; i < m_clients.size(); i++)
+			{
+				if (m_clients[i] == client)
+				{
+					continue;
+				}
+
+				SendFrame(m_clients[i], frame);
+			}
+		}
 		break;
 	default:
 		return false;
@@ -231,6 +267,12 @@ bool TCPServer::RecieveMessage(SOCKET client, std::string & message)
 
 	int result = recv(client, buffer, message_size, NULL);
 
+	if (result == SOCKET_ERROR)
+	{
+		std::cerr << "Client disconnect " << GetLastError() << std::endl;
+		DeleteClient(client);
+		return false;
+	}
 	message = buffer;
 
 	delete[]buffer;
@@ -264,6 +306,7 @@ std::function<void (int)> TCPServer::CreateHandler()
 			if (!ProcessPacket(client, packet))
 			{
 				std::cout << "Close Thread!" << std::endl;
+				cv::destroyWindow("Video");
 				return;
 			}
 

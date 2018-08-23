@@ -8,6 +8,9 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
+namespace cv {
+	class Mat;
+}
 class TCPServer {
 private:
 	enum PacketType {
@@ -24,8 +27,8 @@ private:
 	void DeleteClient(SOCKET client);
 	std::function<void (int)> CreateHandler();
 	void ShowServerInformation();
-	void RecieveFrameAndShow(SOCKET client);
-	void ShowFrame(char *frame);
+	cv::Mat RecieveFrame(SOCKET client);
+	void SendFrame(SOCKET client, cv::Mat frame);
 
 public:
 	TCPServer(int port, const char *ip);
