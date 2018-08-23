@@ -24,6 +24,7 @@ public:
 	QString GetClientIp();
 	QString GetClientPort();
 	QString GetClientName();
+	bool GetStatus();
 
 	std::shared_ptr<TCPClient> GetTCPClient();
 
@@ -37,6 +38,7 @@ private:
 	QString m_port;
 	QString m_name;
 	std::shared_ptr<TCPClient> m_client;
+	bool m_status;
 public slots:
 	void exit();
 };

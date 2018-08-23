@@ -14,15 +14,20 @@ int main(int argc, char *argv[])
 	loginwindow loginWindow;
 	loginWindow.exec();
 	
-	
+	if (!loginWindow.GetStatus())
+	{
+		return -1;
+	}
+
 	MainWindow mainwindow(
-		loginWindow.GetClientPort(),
-		loginWindow.GetClientIp(),
-		loginWindow.GetClientName(),
-		loginWindow.GetTCPClient()
+			loginWindow.GetClientPort(),
+			loginWindow.GetClientIp(),
+			loginWindow.GetClientName(),
+			loginWindow.GetTCPClient()
 	);
 
-	mainwindow.show();
+	mainwindow.show();	
+
 
 
 	return app.exec();

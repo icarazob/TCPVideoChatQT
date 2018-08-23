@@ -67,7 +67,7 @@ void TCPServer::ShowServerInformation()
 
 cv::Mat TCPServer::RecieveFrame(SOCKET client)
 {
-	cv::Mat recieveFrame = cv::Mat::zeros(361,441,CV_8UC3);
+	cv::Mat recieveFrame = cv::Mat::zeros(371,441,CV_8UC3);
 	char* uptr = (char*)recieveFrame.data;
 
 	int frameSize;

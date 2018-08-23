@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "TCPClient.h"
 #include "loginwindow.h"
+#include "NativeFrameLabel.h"
 #include <functional>
 #include <memory>
 #include <thread>
@@ -15,13 +16,14 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QObject, public QMainWindow
+class MainWindow :public QObject,public QMainWindow
 {
     Q_OBJECT
 private:
 	std::function<void (void)> GetVideoHandler();
 
 	typedef std::unordered_map<std::string, std::thread> ThreadMap;
+	bool eventFilter(QObject *watched, QEvent *event);
 
 public:
     explicit MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client);
@@ -35,6 +37,7 @@ private:
 	QString m_port;
 	QString m_name;
 	ThreadMap threadMap;
+	NativeFrameLabel *m_nativeFrameLabel;
 public slots:
 	void exit();
 	void UpdatePlain();

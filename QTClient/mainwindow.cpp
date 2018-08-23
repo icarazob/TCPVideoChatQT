@@ -3,8 +3,56 @@
 #include <QString>
 #include <qpixmap.h>
 #include <qimage.h>
+#include <QLabel>
 #include <Windows.h>
+#include <QMessageBox>
+#include <QKeyEvent>
 
+
+
+bool MainWindow::eventFilter(QObject * watched, QEvent * event)
+{
+	static bool enterPress = false;
+	static bool enterRelease = true;
+	static bool shiftPress = false;
+	static bool shiftRelease = true;
+	if (event->type() == QEvent::KeyPress) {
+
+		QKeyEvent* key = static_cast<QKeyEvent*>(event);
+		if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+			if (shiftRelease)
+			{
+				UpdatePlain();
+			}
+			else
+			{
+				ui->plainTextForSend->appendPlainText("\n");
+			}
+
+			return true;
+		}
+		else if (key->key() == Qt::Key_Shift)
+		{
+			shiftPress = true;
+			shiftRelease = false;
+		}
+		else {
+
+			return QObject::eventFilter(watched, event);
+		}
+	}
+	else if (event->type() == QEvent::KeyRelease) {
+		QKeyEvent* key = static_cast<QKeyEvent*>(event);
+
+		if (key->key() == Qt::Key_Shift)
+		{
+			shiftPress = false;
+			shiftRelease = true;
+		}
+		return QObject::eventFilter(watched, event);
+	}
+	return false;
+}
 
 MainWindow::MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client) :
     QMainWindow(0),
@@ -16,30 +64,31 @@ MainWindow::MainWindow(QString port, QString ip, QString name,std::shared_ptr<TC
 	ui->setupUi(this);
 	m_client = client;
 
-	//m_client = std::make_shared<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(),m_name.toUtf8().constData());
-
-	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
-
-
+	m_nativeFrameLabel = new NativeFrameLabel(this);
+	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
+	
 	if (!m_client->Connect())
 	{
 		exit();
 	}
 
 	ui->nameLabel->setText(name);
+	ui->plainTextForSend->installEventFilter(this);
+	
+	
+	//connects
 	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SLOT(exit()));
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
-
-	/*	QObject::connect(ui->, SIGNAL(returnPressed()), SLOT(UpdatePlain()));*/
-/*	QObject::connect(ui->actionLogin, SIGNAL(triggered()), SLOT(ShowLoginWindow()));*/
+	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
 
 }
 
 MainWindow::~MainWindow()
 {
+
     delete ui;
 }
 void MainWindow::ShowFrame()
@@ -57,12 +106,15 @@ void MainWindow::ShowFrame()
 
 	return;
 }
+
 std::function<void (void)> MainWindow::GetVideoHandler()
 {
 	return [this]()
 	{
 		const int c_widthLabel = ui->label->width();
 		const int c_heightLabel = ui->label->height();
+		const int c_widthNativeLabel = m_nativeFrameLabel->GetWidth();
+		const int c_heightNativeLabel = m_nativeFrameLabel->GetHeight();
 
 		m_capture.open(0);
 		cv::Mat frame;
@@ -86,6 +138,13 @@ std::function<void (void)> MainWindow::GetVideoHandler()
 
 			cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
 			m_client->SendFrame(frame);
+
+			
+			cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
+			cv::cvtColor(frame, frame, CV_BGR2RGB);
+			m_nativeFrameLabel->SetFrame(frame);
+// 			ui->nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
+			
 
 			char c = cv::waitKey(25);
 

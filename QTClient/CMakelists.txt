@@ -3,7 +3,7 @@ cmake_minimum_required ( VERSION 3.10.0 FATAL_ERROR)
 project(HelloQt)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(OpenCV_DIR "C:/opencv/build")
+set(OpenCV_DIR "C:/opencv340/opencv/build")
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(QT5 REQUIRED COMPONENTS Core Gui)
@@ -14,11 +14,25 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(file_settings 
 	${PROJECT_SOURCE_DIR}/settings/XMLsettings.xml
 )
+
+set(image_files
+	${PROJECT_SOURCE_DIR}/images
+)
  
 foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
 	file(COPY ${file_settings} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/settings)
 endforeach()
 
+function(copy_images dir)
+	file(GLOB IMAGES "${dir}/*.png")
+
+	foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
+		file(COPY ${IMAGES} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/images)
+	endforeach()
+
+endfunction(copy_images)
+
+copy_images(${image_files})
 set(project_ui
 	mainwindow.ui
 	loginwindow.ui
@@ -28,12 +42,14 @@ set(SOURCES
 	mainwindow.cpp
 	TCPClient.cpp
 	loginwindow.cpp
+	NativeFrameLabel.cpp
 )
 
 set(HEADERS
 	mainwindow.h
 	TCPClient.h
 	loginwindow.h
+	NativeFrameLabel.h
 )
 
 qt5_wrap_ui(project_headers_wrapped ${project_ui})
