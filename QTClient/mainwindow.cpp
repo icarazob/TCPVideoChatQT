@@ -54,19 +54,31 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 	return false;
 }
 
-MainWindow::MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client) :
-    QMainWindow(0),
+void MainWindow::SetStatusVideoRead(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_videoMutex);
+	m_shouldRead = value;
+}
+
+bool MainWindow::GetStatusVideoRead()
+{
+	std::lock_guard<std::mutex> lock(m_videoMutex);
+	return m_shouldRead;
+}
+
+MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<TCPClient> client) :
+	QMainWindow(0),
 	m_port(port),
 	m_ip(ip),
 	m_name(name),
-    ui(new Ui::MainWindow)
+	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
 	m_client = client;
 
 	m_nativeFrameLabel = new NativeFrameLabel(this);
 	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
-	
+
 	if (!m_client->Connect())
 	{
 		exit();
@@ -74,8 +86,22 @@ MainWindow::MainWindow(QString port, QString ip, QString name,std::shared_ptr<TC
 
 	ui->nameLabel->setText(name);
 	ui->plainTextForSend->installEventFilter(this);
-	
-	
+
+	//set icons
+	QIcon icon1,icon2,icon3;
+	QString appPath = QCoreApplication::applicationDirPath();
+	QString icon1ImagePath = appPath + "/images/Stop.png";
+	QString icon2ImagePath = appPath + "/images/Play.png";
+	QString icon3ImagePath = appPath + "/images/microphone.png";
+
+	icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+
+	ui->stopVideoButton->setIcon(icon1);
+	ui->videoButton->setIcon(icon2);
+	ui->audioButton->setIcon(icon3);
+
 	//connects
 	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SLOT(exit()));
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
@@ -83,13 +109,14 @@ MainWindow::MainWindow(QString port, QString ip, QString name,std::shared_ptr<TC
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
+	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
+	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 
 }
 
 MainWindow::~MainWindow()
 {
-
-    delete ui;
+	delete ui;
 }
 void MainWindow::ShowFrame()
 {
@@ -107,7 +134,7 @@ void MainWindow::ShowFrame()
 	return;
 }
 
-std::function<void (void)> MainWindow::GetVideoHandler()
+std::function<void(void)> MainWindow::GetVideoHandler()
 {
 	return [this]()
 	{
@@ -116,50 +143,58 @@ std::function<void (void)> MainWindow::GetVideoHandler()
 		const int c_widthNativeLabel = m_nativeFrameLabel->GetWidth();
 		const int c_heightNativeLabel = m_nativeFrameLabel->GetHeight();
 
+
 		m_capture.open(0);
+
+
 		cv::Mat frame;
 
 		if (!m_capture.isOpened())
 		{
-			std::cerr << "Video can't start! " << GetLastError() << std::endl;
 			ui->label->clear();
+			m_nativeFrameLabel->Clear();
 			return;
 		}
-		int count = 0;
+
+
+
 		while (true)
 		{
-			bool successReadFrame = m_capture.read(frame);
-
-			if (!successReadFrame)
+			if(GetStatusVideoRead())
 			{
-	
+				bool successReadFrame = m_capture.read(frame);
+
+				if (!successReadFrame)
+				{
+					break;
+				}
+
+				cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
+				m_client->SendFrame(frame);
+
+
+				cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
+				cv::cvtColor(frame, frame, CV_BGR2RGB);
+				m_nativeFrameLabel->SetFrame(frame);
+				// ui->nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
+
+
+				char c = cv::waitKey(25);
+			}
+			else
+			{
 				break;
 			}
 
-			cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
-			m_client->SendFrame(frame);
 
-			
-			cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
-			cv::cvtColor(frame, frame, CV_BGR2RGB);
-			m_nativeFrameLabel->SetFrame(frame);
-// 			ui->nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
-			
-
-			char c = cv::waitKey(25);
-
-			if (c == 27)
-			{
-				break;
-			}
-
-			count++;
 		}
 
+		m_capture.release();
 		ui->label->clear();
+		m_nativeFrameLabel->Clear();
 		return;
 	};
-	
+
 }
 void MainWindow::UpdatePlain()
 {
@@ -172,7 +207,7 @@ void MainWindow::UpdatePlain()
 
 		//Update plainEdit
 		QString you("You");
-		ui->plainTextEdit->appendPlainText(you + ": "+lineText);
+		ui->plainTextEdit->appendPlainText(you + ": " + lineText);
 
 		//clear plainTextForSend
 		ui->plainTextForSend->clear();
@@ -185,10 +220,6 @@ void MainWindow::UpdatePlainText(QString message)
 
 void MainWindow::exit()
 {
-	if (m_capture.isOpened())
-	{
-		m_capture.release();
-	}
 	this->close();
 }
 
@@ -200,8 +231,12 @@ void MainWindow::StartVideoStream()
 	std::string threadName("VideoThread");
 	std::thread videoThread(GetVideoHandler());
 
+	SetStatusVideoRead(true);
 	threadMap[threadName] = std::move(videoThread);
-	threadMap[threadName].detach();
+	threadMap[threadName].detach();		//????
+
+	
+	Q_EMIT videoStream(true);
 
 }
 
@@ -215,14 +250,34 @@ void MainWindow::StopVideoStream()
 
 	if (it != threadMap.end())
 	{
+		SetStatusVideoRead(false);
+		
+		//condition variable
 		SuspendThread(it->second.native_handle());
 		threadMap.erase(threadName);
 
-		m_capture.release();
-
 	}
 
+
+	Q_EMIT videoStream(false);
 	ui->label->clear();
+	m_nativeFrameLabel->Clear();
 	return;
+
+}
+
+void MainWindow::TurnAudio()
+{
+	if (!m_lastStateAudioButton)
+	{
+		m_audio = std::make_shared<AudioProcessor>();
+	}
+	else
+	{
+		m_audio.reset();
+		m_audio = nullptr;
+	}
+
+	m_lastStateAudioButton = !m_lastStateAudioButton;
 
 }

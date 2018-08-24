@@ -85,6 +85,11 @@ TCPClient::TCPClient(int port, const char * ip,std::string name)
 
 }
 
+TCPClient::~TCPClient()
+{
+
+}
+
 bool TCPClient::Connect()
 {
 
@@ -200,6 +205,32 @@ void TCPClient::SendFrame(cv::Mat frame)
 	}
 	
 	return;
+}
+
+void TCPClient::SendAudio(char *data, int length)
+{
+	PacketType packet = P_AudioMessage;
+
+	int resutlPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+	if (resutlPacket == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	int size = length;
+
+	int resultInt = send(m_connection, (char*)&size, sizeof(int), NULL);
+	if (resultInt == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	int resultData = send(m_connection, data, size, NULL);
+	if (resultData == SOCKET_ERROR)
+	{
+		return;
+	}
+
 }
 
 cv::Mat TCPClient::GetCurrentFrame()

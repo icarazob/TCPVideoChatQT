@@ -16,7 +16,8 @@ class TCPClient: public QObject{
 public:
 	enum PacketType {
 		P_ChatMessage,
-		P_FrameMessage
+		P_FrameMessage,
+		P_AudioMessage
 	};
 private:
 	bool ProcessPacket(PacketType &packet);
@@ -26,12 +27,13 @@ private:
 	void RecieveFrame();
 public:
 	TCPClient(int port, const char *ip,std::string name);
-
+	~TCPClient();
 	bool Connect();
 
 	void RecieveMessage();
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
+	void SendAudio(char* data,int lengt);
 	
 	cv::Mat GetCurrentFrame();
 	

@@ -6,7 +6,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(OpenCV_DIR "C:/opencv340/opencv/build")
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Multimedia REQUIRED)
 find_package(QT5 REQUIRED COMPONENTS Core Gui)
+
+
 find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -43,6 +46,7 @@ set(SOURCES
 	TCPClient.cpp
 	loginwindow.cpp
 	NativeFrameLabel.cpp
+	AudioProcessor.cpp
 )
 
 set(HEADERS
@@ -50,6 +54,7 @@ set(HEADERS
 	TCPClient.h
 	loginwindow.h
 	NativeFrameLabel.h
+	AudioProcessor.h
 )
 
 qt5_wrap_ui(project_headers_wrapped ${project_ui})
@@ -65,5 +70,6 @@ target_link_libraries(${PROJECT_NAME}
 		Qt5::Core
 		Qt5::Gui
 		Qt5::Widgets
+		Qt5::Multimedia
 		${OpenCV_LIBS}
 	)

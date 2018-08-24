@@ -4,77 +4,97 @@
 
 bool NativeFrameLabel::eventFilter(QObject * watched, QEvent * event)
 {
-	if (event->type() == QEvent::MouseButtonPress)
+	if (m_isStream)
 	{
-		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-		if (mouseEvent->button() == Qt::LeftButton)
+		if (event->type() == QEvent::MouseButtonPress)
 		{
-			m_moving = true;
-			m_lastPos = mouseEvent->pos();
-			return true;
-		}
-		else
-		{
-			return QObject::eventFilter(watched, event);
-		}
-	}
-	else if (event->type() == QEvent::MouseMove)
-	{
-		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-		if (m_moving)
-		{
-			return true;
-		}
-		else
-		{
-			return QObject::eventFilter(watched, event);
-		}
-	}
-	else if (event->type() == QEvent::MouseButtonRelease)
-	{
-		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-		if (mouseEvent->button() == Qt::LeftButton)
-		{
-
-			QPoint currentPos = mouseEvent->pos();
-
-			int biasX = currentPos.x() - m_lastPos.x();
-			int biasY = currentPos.y() - m_lastPos.y();
-
-			int newX = m_topLeftPointLabel.x() + biasX;
-			int newY = m_topLeftPointLabel.y() + biasY;
-			if (newX < m_topLeftBorder.x())
+			QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			if (mouseEvent->button() == Qt::LeftButton)
 			{
-				m_topLeftPointLabel.setX(m_topLeftBorder.x());
+				m_moving = true;
+				m_lastPos = mouseEvent->pos();
+				return true;
 			}
 			else
 			{
-				m_topLeftPointLabel.setX(newX);
+				return QObject::eventFilter(watched, event);
 			}
-			if (newY < m_topLeftBorder.y())
+		}
+		else if (event->type() == QEvent::MouseMove)
+		{
+			QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			if (m_moving)
 			{
-				m_topLeftPointLabel.setY(m_topLeftBorder.y());
+				return true;
 			}
 			else
 			{
-				m_topLeftPointLabel.setY(newY);
+				return QObject::eventFilter(watched, event);
 			}
-			
-			m_nativeLabel->setGeometry(m_topLeftPointLabel.x(), m_topLeftPointLabel.y(), m_width, m_height);
+		}
+		else if (event->type() == QEvent::MouseButtonRelease)
+		{
+			QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			if (mouseEvent->button() == Qt::LeftButton)
+			{
 
-			m_moving = false;
-			return true;
+				QPoint currentPos = mouseEvent->pos();
+
+				int biasX = currentPos.x() - m_lastPos.x();
+				int biasY = currentPos.y() - m_lastPos.y();
+
+				int newX = m_topLeftPointLabel.x() + biasX;
+				int newY = m_topLeftPointLabel.y() + biasY;
+
+
+				if (newX < m_topLeftBorder.x())
+				{
+					m_topLeftPointLabel.setX(m_topLeftBorder.x());
+				}
+				else if ((newX + m_width) > m_bottomRightBorder.x())
+				{
+					m_topLeftPointLabel.setX(m_bottomRightBorder.x() - m_width);
+				}
+				else /*(newX > m_topLeftBorder.x() && (newX + m_width) < m_bottomRightBorder.x())*/
+				{
+					m_topLeftPointLabel.setX(newX);
+				}
+
+
+				if(newY < m_topLeftBorder.y())
+				{
+					m_topLeftPointLabel.setY(m_topLeftBorder.y());
+				}
+				else if ((newY + m_height) > m_bottomRightBorder.y())
+				{
+					m_topLeftPointLabel.setY(m_bottomRightBorder.y() - m_height);
+				}
+				else
+				{
+					m_topLeftPointLabel.setY(newY);
+				}
+
+				m_nativeLabel->setGeometry(m_topLeftPointLabel.x(), m_topLeftPointLabel.y(), m_width, m_height);
+
+				m_moving = false;
+				return true;
+			}
+			else
+			{
+				return QObject::eventFilter(watched, event);
+			}
+
 		}
 		else
 		{
 			return QObject::eventFilter(watched, event);
 		}
-
 	}
 	else
 	{
 		return QObject::eventFilter(watched, event);
 	}
+
 }
 
 NativeFrameLabel::NativeFrameLabel(QWidget *parent) :
@@ -124,4 +144,16 @@ void NativeFrameLabel::SetBoundaries(QPoint topLeftBorder, QPoint bottomRightBor
 {
 	m_topLeftBorder = topLeftBorder;
 	m_bottomRightBorder = bottomRightBorder;
+}
+
+void NativeFrameLabel::Clear()
+{
+	m_nativeLabel->clear();
+}
+
+void NativeFrameLabel::ChangedCondition(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	m_isStream = value;
 }

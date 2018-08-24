@@ -5,6 +5,7 @@
 #include "TCPClient.h"
 #include "loginwindow.h"
 #include "NativeFrameLabel.h"
+#include "AudioProcessor.h"
 #include <functional>
 #include <memory>
 #include <thread>
@@ -25,6 +26,9 @@ private:
 	typedef std::unordered_map<std::string, std::thread> ThreadMap;
 	bool eventFilter(QObject *watched, QEvent *event);
 
+	void SetStatusVideoRead(bool value);
+	bool GetStatusVideoRead();
+
 public:
     explicit MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client);
     ~MainWindow();
@@ -38,14 +42,23 @@ private:
 	QString m_name;
 	ThreadMap threadMap;
 	NativeFrameLabel *m_nativeFrameLabel;
+
+	std::mutex m_videoMutex;
+	std::shared_ptr<AudioProcessor> m_audio;
+	
+	bool m_shouldRead = false;
+	bool m_lastStateAudioButton = false;
 public slots:
 	void exit();
 	void UpdatePlain();
 	void UpdatePlainText(QString message);
 	void ShowFrame();
+signals:
+	void videoStream(bool);
 private slots:
 	void StartVideoStream();
 	void StopVideoStream();
+	void TurnAudio();
 };
 
 #endif // MAINWINDOW_H

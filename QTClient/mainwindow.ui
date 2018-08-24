@@ -58,7 +58,7 @@
      <enum>Qt::TabFocus</enum>
     </property>
     <property name="autoFillBackground">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(255, 0, 0);
@@ -165,8 +165,8 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
    <widget class="QPushButton" name="videoButton">
     <property name="geometry">
      <rect>
-      <x>620</x>
-      <y>390</y>
+      <x>600</x>
+      <y>400</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -175,9 +175,9 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
      <string/>
     </property>
     <property name="icon">
-     <iconset theme="play">
+     <iconset>
       <selectedoff>C:/Users/igorb/Desktop/images.jpg</selectedoff>
-      <selectedon>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</selectedon>
+      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/Play.png</selectedon>
      </iconset>
     </property>
     <property name="iconSize">
@@ -202,8 +202,8 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>670</x>
-      <y>390</y>
+      <x>680</x>
+      <y>400</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -213,7 +213,8 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</normaloff>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</iconset>
+      <normaloff>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</normaloff>
+      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/Stop.png</selectedon>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -249,6 +250,33 @@ color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; font-style:italic;&quot;&gt;Nikname&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="audioButton">
+    <property name="geometry">
+     <rect>
+      <x>640</x>
+      <y>400</y>
+      <width>41</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/microphone.png</selectedon>
+     </iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>30</width>
+      <height>30</height>
+     </size>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
