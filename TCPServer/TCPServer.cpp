@@ -260,7 +260,7 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 
 			}
 
-			//delete[]audio;
+			delete[]audio;
 		}
 
 		break;

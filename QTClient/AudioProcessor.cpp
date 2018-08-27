@@ -46,7 +46,8 @@ void AudioProcessor::readMore()
 
 	if (l > 0)
 	{
-
+
+
 		Q_EMIT audioDataPreapre(m_buffer, len);
 		//m_output->write((char*)outdata, len);
 	}
@@ -106,12 +107,6 @@ void AudioProcessor::ProcessData(QByteArray buffer, int length)
 AudioProcessor::~AudioProcessor()
 {
 
-}
-
-int AudioProcessor::ApplyVolumeToSample(short iSample)
-{
-	//Calculate volume, Volume limited to  max 35535 and min -35535
-	return std::max(std::min(((iSample * m_iVolume) / 50), 35535), -35535);
 }
 
 

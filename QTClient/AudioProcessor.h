@@ -12,7 +12,6 @@ private:
 	void InitializeAudio();
 	void CreateAudioInput();
 	void CreateAudioOutput();
-	int ApplyVolumeToSample(short iSample);
 
 public:
 	explicit AudioProcessor();

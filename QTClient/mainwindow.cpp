@@ -10,61 +10,7 @@
 
 
 
-bool MainWindow::eventFilter(QObject * watched, QEvent * event)
-{
-	static bool enterPress = false;
-	static bool enterRelease = true;
-	static bool shiftPress = false;
-	static bool shiftRelease = true;
-	if (event->type() == QEvent::KeyPress) {
 
-		QKeyEvent* key = static_cast<QKeyEvent*>(event);
-		if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
-			if (shiftRelease)
-			{
-				UpdatePlain();
-			}
-			else
-			{
-				ui->plainTextForSend->appendPlainText("\n");
-			}
-
-			return true;
-		}
-		else if (key->key() == Qt::Key_Shift)
-		{
-			shiftPress = true;
-			shiftRelease = false;
-		}
-		else {
-
-			return QObject::eventFilter(watched, event);
-		}
-	}
-	else if (event->type() == QEvent::KeyRelease) {
-		QKeyEvent* key = static_cast<QKeyEvent*>(event);
-
-		if (key->key() == Qt::Key_Shift)
-		{
-			shiftPress = false;
-			shiftRelease = true;
-		}
-		return QObject::eventFilter(watched, event);
-	}
-	return false;
-}
-
-void MainWindow::SetStatusVideoRead(bool value)
-{
-	std::lock_guard<std::mutex> lock(m_videoMutex);
-	m_shouldRead = value;
-}
-
-bool MainWindow::GetStatusVideoRead()
-{
-	std::lock_guard<std::mutex> lock(m_videoMutex);
-	return m_shouldRead;
-}
 
 MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<TCPClient> client) :
 	QMainWindow(0),
@@ -112,7 +58,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
-	QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
+	//QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
@@ -294,4 +240,59 @@ void MainWindow::SendAudio(QByteArray buffer, int length)
 void MainWindow::ProcessAudioData(QByteArray data, int length)
 {
 	m_audio->ProcessData(data, length);
+}
+bool MainWindow::eventFilter(QObject * watched, QEvent * event)
+{
+	static bool enterPress = false;
+	static bool enterRelease = true;
+	static bool shiftPress = false;
+	static bool shiftRelease = true;
+	if (event->type() == QEvent::KeyPress) {
+
+		QKeyEvent* key = static_cast<QKeyEvent*>(event);
+		if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
+			if (shiftRelease)
+			{
+				UpdatePlain();
+			}
+			else
+			{
+				ui->plainTextForSend->appendPlainText("\n");
+			}
+
+			return true;
+		}
+		else if (key->key() == Qt::Key_Shift)
+		{
+			shiftPress = true;
+			shiftRelease = false;
+		}
+		else {
+
+			return QObject::eventFilter(watched, event);
+		}
+	}
+	else if (event->type() == QEvent::KeyRelease) {
+		QKeyEvent* key = static_cast<QKeyEvent*>(event);
+
+		if (key->key() == Qt::Key_Shift)
+		{
+			shiftPress = false;
+			shiftRelease = true;
+		}
+		return QObject::eventFilter(watched, event);
+	}
+	return false;
+}
+
+void MainWindow::SetStatusVideoRead(bool value)
+{
+	std::lock_guard<std::mutex> lock(m_videoMutex);
+	m_shouldRead = value;
+}
+
+bool MainWindow::GetStatusVideoRead()
+{
+	std::lock_guard<std::mutex> lock(m_videoMutex);
+	return m_shouldRead;
 }

@@ -229,7 +229,9 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 		return;
 	}
 
-	int resultData = send(m_connection, buffer.data(), buffer.size(), NULL);
+	char* memory = buffer.data();
+
+	int resultData = send(m_connection, memory, buffer.size(), NULL);
 	if (resultData == SOCKET_ERROR)
 	{
 		return;
