@@ -46,12 +46,9 @@ void AudioProcessor::readMore()
 
 	if (l > 0)
 	{
-		short* resultingData = (short*)m_buffer.data();
-
-		short *outdata = resultingData;
-		outdata[0] = resultingData[0];
-		Q_EMIT audioDataPreapre((char*)outdata, len);
-		m_output->write((char*)outdata, len);
+
+		Q_EMIT audioDataPreapre(m_buffer, len);
+		//m_output->write((char*)outdata, len);
 	}
 }
 
@@ -85,6 +82,25 @@ AudioProcessor::AudioProcessor():
 	m_input = m_audioInput->start();
 
 	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
+
+	CloseInput();
+}
+
+void AudioProcessor::CloseInput()
+{
+	m_audioInput->stop();
+}
+
+void AudioProcessor::StartInput()
+{
+	m_input = m_audioInput->start();
+
+	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
+}
+
+void AudioProcessor::ProcessData(QByteArray buffer, int length)
+{
+	m_output->write(buffer.data(), length);
 }
 
 AudioProcessor::~AudioProcessor()

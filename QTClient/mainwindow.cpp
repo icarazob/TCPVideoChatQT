@@ -84,6 +84,8 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 		exit();
 	}
 
+	m_audio = std::make_shared<AudioProcessor>();
+
 	ui->nameLabel->setText(name);
 	ui->plainTextForSend->installEventFilter(this);
 
@@ -102,6 +104,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	ui->videoButton->setIcon(icon2);
 	ui->audioButton->setIcon(icon3);
 
+
 	//connects
 	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SLOT(exit()));
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
@@ -109,8 +112,10 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
+	QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
+	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
 
 }
 
@@ -120,7 +125,7 @@ MainWindow::~MainWindow()
 }
 void MainWindow::ShowFrame()
 {
-	cv::Mat copyFrame = m_client->GetCurrentFrame();
+	cv::Mat copyFrame(m_client->GetCurrentFrame());
 	if (!copyFrame.empty())
 	{
 		cv::cvtColor(copyFrame, copyFrame, CV_BGR2RGB);
@@ -270,14 +275,23 @@ void MainWindow::TurnAudio()
 {
 	if (!m_lastStateAudioButton)
 	{
-		m_audio = std::make_shared<AudioProcessor>();
+		m_audio->StartInput();
 	}
 	else
 	{
-		m_audio.reset();
-		m_audio = nullptr;
+		m_audio->CloseInput();
 	}
 
 	m_lastStateAudioButton = !m_lastStateAudioButton;
 
+}
+
+void MainWindow::SendAudio(QByteArray buffer, int length)
+{
+	m_client->SendAudio(buffer, length);
+}
+
+void MainWindow::ProcessAudioData(QByteArray data, int length)
+{
+	m_audio->ProcessData(data, length);
 }

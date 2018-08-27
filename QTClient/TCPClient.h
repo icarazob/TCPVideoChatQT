@@ -25,6 +25,7 @@ private:
 	std::function<void (void)> CreateProcessHandler();
 	void CreateSocket();
 	void RecieveFrame();
+	void RecieveAudio();
 public:
 	TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
@@ -33,13 +34,14 @@ public:
 	void RecieveMessage();
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
-	void SendAudio(char* data,int lengt);
+	void SendAudio(QByteArray buffer,int lengt);
 	
 	cv::Mat GetCurrentFrame();
 	
 signals:
 	void recieveEvent(QString message);
 	void recieveEventFrame();
+	void recieveEventAudio(QByteArray,int);
 private:
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;

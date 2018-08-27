@@ -174,12 +174,6 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
     <property name="text">
      <string/>
     </property>
-    <property name="icon">
-     <iconset>
-      <selectedoff>C:/Users/igorb/Desktop/images.jpg</selectedoff>
-      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/Play.png</selectedon>
-     </iconset>
-    </property>
     <property name="iconSize">
      <size>
       <width>30</width>
@@ -213,8 +207,8 @@ font: italic 10pt &quot;Times New Roman&quot;;</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</normaloff>
-      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/Stop.png</selectedon>C:/Users/igorb/Desktop/black-stop-button-icon-30353.png</iconset>
+      <selectedon>images/Stop.png</selectedon>
+     </iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -266,8 +260,7 @@ color: rgb(0, 0, 0);</string>
     </property>
     <property name="icon">
      <iconset>
-      <selectedon>../../BUILD_MyProject/BUILD_QTClient/bin/RelWithDebInfo/images/microphone.png</selectedon>
-     </iconset>
+      <normaloff>images/microphone.png</normaloff>images/microphone.png</iconset>
     </property>
     <property name="iconSize">
      <size>

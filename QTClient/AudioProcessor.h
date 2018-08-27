@@ -16,9 +16,12 @@ private:
 
 public:
 	explicit AudioProcessor();
+	void CloseInput();
+	void StartInput();
+	void ProcessData(QByteArray buffer, int length);
 	~AudioProcessor();
 signals:
-	void audioDataPreapre(char *data, int lenght);
+	void audioDataPreapre(QByteArray, int lenght);
 private slots:
 	void readMore();
 private:

@@ -21,6 +21,8 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 	case P_FrameMessage:
 		RecieveFrame();
 		break;
+	case P_AudioMessage:
+		RecieveAudio();
 	default:
 		return false;
 		break;
@@ -207,8 +209,10 @@ void TCPClient::SendFrame(cv::Mat frame)
 	return;
 }
 
-void TCPClient::SendAudio(char *data, int length)
+void TCPClient::SendAudio(QByteArray buffer, int length)
 {
+	std::lock_guard<std::mutex> lock(m_mutex);
+
 	PacketType packet = P_AudioMessage;
 
 	int resutlPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
@@ -225,7 +229,7 @@ void TCPClient::SendAudio(char *data, int length)
 		return;
 	}
 
-	int resultData = send(m_connection, data, size, NULL);
+	int resultData = send(m_connection, buffer.data(), buffer.size(), NULL);
 	if (resultData == SOCKET_ERROR)
 	{
 		return;
@@ -235,12 +239,13 @@ void TCPClient::SendAudio(char *data, int length)
 
 cv::Mat TCPClient::GetCurrentFrame()
 {
+	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_currentFrame;
 }
 
 void TCPClient::RecieveFrame()
 {
-	cv::Mat recieveFrame = cv::Mat::zeros(361, 441, CV_8UC3);
+	cv::Mat recieveFrame = cv::Mat::zeros(371, 441, CV_8UC3);
 	char* uptr = (char*)recieveFrame.data;
 
 	int frameSize;
@@ -264,4 +269,32 @@ void TCPClient::RecieveFrame()
 
 	return;
 
+}
+
+void TCPClient::RecieveAudio()
+{
+	const int c_bufferSize = 14096;
+	int length;
+	int resultInt = recv(m_connection, (char*)&length, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	char *buffer = new char[c_bufferSize];
+
+	int resultData = recv(m_connection, buffer, c_bufferSize, NULL);
+
+	if (resultData == SOCKET_ERROR)
+	{
+		return;
+	}
+
+	QByteArray	
+	Q_EMIT recieveEventAudio(QByteArray(reinterpret_cast<char*>(buffer),c_bufferSize), length);
+
+	//delete[]buffer;
+
+	return;
 }

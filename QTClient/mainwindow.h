@@ -59,6 +59,8 @@ private slots:
 	void StartVideoStream();
 	void StopVideoStream();
 	void TurnAudio();
+	void SendAudio(QByteArray buffer, int length);
+	void ProcessAudioData(QByteArray data, int length);
 };
 
 #endif // MAINWINDOW_H

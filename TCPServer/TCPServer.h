@@ -15,7 +15,8 @@ class TCPServer {
 private:
 	enum PacketType {
 		P_ChatMessage,
-		P_FrameMessage
+		P_FrameMessage,
+		P_AudioMessage
 	};
 
 
@@ -29,6 +30,8 @@ private:
 	void ShowServerInformation();
 	cv::Mat RecieveFrame(SOCKET client);
 	void SendFrame(SOCKET client, cv::Mat frame);
+	bool ReceiveAudio(SOCKET client,char **buffer,int &length);
+	void SendAudio(SOCKET client, char *buffer,int length);
 
 public:
 	TCPServer(int port, const char *ip);

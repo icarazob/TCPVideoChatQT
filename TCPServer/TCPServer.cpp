@@ -33,8 +33,7 @@ bool TCPServer::Run()
 		if (newClient = accept(m_listenSocket, (SOCKADDR*)&m_addr, &sizeOfAddr))
 		{
 			std::cout << "Client connected!" << std::endl;
-			SendMessage(newClient, c_welcome);
-			
+
 			//Add new client to container
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
@@ -126,6 +125,67 @@ void TCPServer::SendFrame(SOCKET client,cv::Mat frame)
 
 }
 
+bool TCPServer::ReceiveAudio(SOCKET client, char **buffer,int &length)
+{
+	const int c_sizeBuffer = 14096;
+	int bufferSize = 0;
+
+	int resultInt = recv(client, (char*)&bufferSize, sizeof(int), NULL);
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Can't receive size of buffer" << GetLastError() << std::endl;
+		return false;
+	}
+
+	char *tempBuffer = new char[c_sizeBuffer];
+
+	int resultBuffer = recv(client, tempBuffer, c_sizeBuffer, NULL);
+	if (resultBuffer == SOCKET_ERROR)
+	{
+		std::cerr << "Can't recieve bytes of audio" << GetLastError() << std::endl;
+		return false;
+	}
+
+	*buffer = tempBuffer;
+	length = bufferSize;
+
+	return true;
+}
+
+void TCPServer::SendAudio(SOCKET client, char * buffer, int length)
+{
+	const int c_bufferSize = 14096;
+
+	PacketType packet = P_AudioMessage;
+
+	int resultPacket = send(client, (char*)&packet, sizeof(packet), NULL);
+	if (resultPacket == SOCKET_ERROR)
+	{
+		std::cerr << "Audio: can't send a packet " << GetLastError() << std::endl;
+		return;
+	}
+
+	int size = length;
+	int resultInt = send(client, (char*)&size, sizeof(int), NULL);
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Audio: can't send a buffer size " << GetLastError() << std::endl;
+		return;
+	}
+
+	int resultBuffer = send(client, buffer,c_bufferSize , NULL);
+	if (resultBuffer == SOCKET_ERROR)
+	{
+		std::cerr << "Audio: can't send a buffer" << GetLastError() << std::endl;
+		return;
+	}
+
+	return;
+	
+
+	
+}
+
 TCPServer::~TCPServer()
 {
 	
@@ -145,6 +205,9 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 
 	cv::Mat frame;
 	std::string message;
+	char *audio;
+	int length = 0;
+
 	switch (packet)
 	{
 	case P_ChatMessage:
@@ -181,6 +244,25 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 				SendFrame(m_clients[i], frame);
 			}
 		}
+		break;
+	case P_AudioMessage:
+		if (ReceiveAudio(client, &audio,length))
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+
+			for (int i = 0; i < m_clients.size(); i++)
+			{
+				if (m_clients[i] == client)
+				{
+					SendAudio(m_clients[i], audio, length);
+				}
+
+
+			}
+
+			//delete[]audio;
+		}
+
 		break;
 	default:
 		return false;
@@ -306,7 +388,7 @@ std::function<void (int)> TCPServer::CreateHandler()
 			if (!ProcessPacket(client, packet))
 			{
 				std::cout << "Close Thread!" << std::endl;
-				cv::destroyWindow("Video");
+				DeleteClient(client);
 				return;
 			}
 
