@@ -12,6 +12,7 @@
 
 
 
+
 MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<TCPClient> client) :
 	QMainWindow(0),
 	m_port(port),
@@ -62,7 +63,6 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
-
 }
 
 MainWindow::~MainWindow()

@@ -2,6 +2,7 @@
 #include <thread>
 #include <chrono>
 #include <QMessageBox>
+#include <QDebug>
 
 
 bool TCPClient::ProcessPacket(PacketType & packet)
@@ -16,13 +17,22 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 	switch (packet)
 	{
 	case P_ChatMessage:
+	{
 		RecieveMessage();
 		break;
+	}
+
 	case P_FrameMessage:
+	{
 		RecieveFrame();
 		break;
+	}
+
 	case P_AudioMessage:
+	{
 		RecieveAudio();
+	}
+
 	default:
 		return false;
 		break;
@@ -94,8 +104,8 @@ TCPClient::~TCPClient()
 
 bool TCPClient::Connect()
 {
-
-	if (::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr)) == 0)
+	int result = ::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr));
+	if ( result == 0)
 	{
 
 		//Create thread
@@ -212,7 +222,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 void TCPClient::SendAudio(QByteArray buffer, int length)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
-
+	qDebug() << "Start ";
 	PacketType packet = P_AudioMessage;
 
 	int resutlPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
@@ -221,22 +231,33 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 		return;
 	}
 
-	int size = length;
 
-	int resultInt = send(m_connection, (char*)&size, sizeof(int), NULL);
+	int resultInt = send(m_connection, (char*)&length, sizeof(int), NULL);
 	if (resultInt == SOCKET_ERROR)
 	{
 		return;
 	}
 
-	char* memory = buffer.data();
 
-	int resultData = send(m_connection, memory, buffer.size(), NULL);
+	int resultData = send(m_connection,&buffer.data()[0], length+1, NULL);
 	if (resultData == SOCKET_ERROR)
 	{
 		return;
 	}
 
+	qDebug() << "Close";
+}
+
+void TCPClient::WaitWhileSendLastAudio()
+{
+	std::unique_lock<std::mutex> lock(m_mutex);
+	m_cv.wait(lock, [] {return &TCPClient::m_proceed; });
+
+	m_audioSend = true;
+	m_proceed = false;
+	lock.unlock();
+
+	m_cv.notify_one();
 }
 
 cv::Mat TCPClient::GetCurrentFrame()
@@ -275,28 +296,28 @@ void TCPClient::RecieveFrame()
 
 void TCPClient::RecieveAudio()
 {
-	const int c_bufferSize = 14096;
 	int length;
-	int resultInt = recv(m_connection, (char*)&length, sizeof(int), NULL);
 
+	int resultInt = recv(m_connection, (char*)&length, sizeof(int), NULL);
 	if (resultInt == SOCKET_ERROR)
 	{
+		qDebug() << "Audio: don't receive length";
 		return;
 	}
 
-	char *buffer = new char[c_bufferSize];
+	char *buffer = new char[length];
 
-	int resultData = recv(m_connection, buffer, c_bufferSize, NULL);
-
+	int resultData = recv(m_connection, buffer, length, NULL);
 	if (resultData == SOCKET_ERROR)
 	{
+		qDebug() << "Audio: don't receive buffer" << resultData;
 		return;
 	}
 
-	QByteArray	
-	Q_EMIT recieveEventAudio(QByteArray(reinterpret_cast<char*>(buffer),c_bufferSize), length);
+	QByteArray	qBuffer = QByteArray(buffer, length);
+	Q_EMIT recieveEventAudio(qBuffer, length);
 
-	//delete[]buffer;
+	delete[]buffer;
 
 	return;
 }

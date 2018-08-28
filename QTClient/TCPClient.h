@@ -35,6 +35,7 @@ public:
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
 	void SendAudio(QByteArray buffer,int lengt);
+	void WaitWhileSendLastAudio();
 	
 	cv::Mat GetCurrentFrame();
 	
@@ -51,4 +52,8 @@ private:
 	std::string m_ip;
 	std::mutex m_mutex;
 	cv::Mat m_currentFrame;
+	std::condition_variable m_cv;
+	bool m_audioSend = false;
+	bool m_proceed = true;
+	
 };

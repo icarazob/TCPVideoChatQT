@@ -33,6 +33,5 @@ private:
 	QIODevice *m_input;
 	QIODevice *m_output;
 	QByteArray m_buffer;
-	int m_iVolume = 10;
 	std::mutex m_mutex;
 };

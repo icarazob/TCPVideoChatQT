@@ -45,6 +45,7 @@ private:
 
 	std::mutex m_videoMutex;
 	std::shared_ptr<AudioProcessor> m_audio;
+
 	
 	bool m_shouldRead = false;
 	bool m_lastStateAudioButton = false;

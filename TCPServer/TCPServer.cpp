@@ -77,7 +77,6 @@ cv::Mat TCPServer::RecieveFrame(SOCKET client)
 	if (resultInt == SOCKET_ERROR)
 	{
 		std::cerr << "Client disconnect " << GetLastError() << std::endl;
-		DeleteClient(client);
 		return cv::Mat::zeros(cv::Size(0, 0), CV_8UC1);
 	}
 	//recieve char
@@ -86,7 +85,6 @@ cv::Mat TCPServer::RecieveFrame(SOCKET client)
 	if (resultFrame == SOCKET_ERROR)
 	{
 		std::cerr << "Error: recieve frame!" << std::endl;
-		DeleteClient(client);
 		return cv::Mat::zeros(cv::Size(0, 0), CV_8UC1);
 	}
 
@@ -125,9 +123,8 @@ void TCPServer::SendFrame(SOCKET client,cv::Mat frame)
 
 }
 
-bool TCPServer::ReceiveAudio(SOCKET client, char **buffer,int &length)
+bool TCPServer::ReceiveAudio(SOCKET client,char **buffer,int &length)
 {
-	const int c_sizeBuffer = 14096;
 	int bufferSize = 0;
 
 	int resultInt = recv(client, (char*)&bufferSize, sizeof(int), NULL);
@@ -137,9 +134,9 @@ bool TCPServer::ReceiveAudio(SOCKET client, char **buffer,int &length)
 		return false;
 	}
 
-	char *tempBuffer = new char[c_sizeBuffer];
+	 char *tempBuffer = new  char[bufferSize];
 
-	int resultBuffer = recv(client, tempBuffer, c_sizeBuffer, NULL);
+	int resultBuffer = recv(client, tempBuffer, bufferSize, NULL);
 	if (resultBuffer == SOCKET_ERROR)
 	{
 		std::cerr << "Can't recieve bytes of audio" << GetLastError() << std::endl;
@@ -152,9 +149,8 @@ bool TCPServer::ReceiveAudio(SOCKET client, char **buffer,int &length)
 	return true;
 }
 
-void TCPServer::SendAudio(SOCKET client, char * buffer, int length)
+void TCPServer::SendAudio(SOCKET client,char * buffer, int length)
 {
-	const int c_bufferSize = 14096;
 
 	PacketType packet = P_AudioMessage;
 
@@ -173,12 +169,14 @@ void TCPServer::SendAudio(SOCKET client, char * buffer, int length)
 		return;
 	}
 
-	int resultBuffer = send(client, buffer,c_bufferSize , NULL);
+	int resultBuffer = send(client, buffer, size, NULL);
 	if (resultBuffer == SOCKET_ERROR)
 	{
 		std::cerr << "Audio: can't send a buffer" << GetLastError() << std::endl;
 		return;
 	}
+
+	
 
 	return;
 	
@@ -211,6 +209,7 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 	switch (packet)
 	{
 	case P_ChatMessage:
+	{
 		RecieveMessage(client, message);
 
 		{
@@ -228,7 +227,9 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 		}
 
 		break;
+	}
 	case P_FrameMessage:
+	{
 		frame = RecieveFrame(client);
 
 		{
@@ -245,8 +246,10 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 			}
 		}
 		break;
+	}
 	case P_AudioMessage:
-		if (ReceiveAudio(client, &audio,length))
+	{
+		if (ReceiveAudio(client, &audio, length))
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -264,7 +267,10 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 		}
 
 		break;
+	}
+
 	default:
+		std::cout << "Undefined packet!" << std::endl;
 		return false;
 	}
 
@@ -340,7 +346,6 @@ bool TCPServer::RecieveMessage(SOCKET client, std::string & message)
 	if (resultInt == SOCKET_ERROR)
 	{
 		std::cerr << "Client disconnect " << GetLastError() << std::endl;
-		DeleteClient(client);
 		return false;
 	}
 
@@ -352,7 +357,6 @@ bool TCPServer::RecieveMessage(SOCKET client, std::string & message)
 	if (result == SOCKET_ERROR)
 	{
 		std::cerr << "Client disconnect " << GetLastError() << std::endl;
-		DeleteClient(client);
 		return false;
 	}
 	message = buffer;

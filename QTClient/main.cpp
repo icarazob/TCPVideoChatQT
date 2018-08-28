@@ -20,13 +20,13 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow mainwindow(
-			loginWindow.GetClientPort(),
-			loginWindow.GetClientIp(),
-			loginWindow.GetClientName(),
-			loginWindow.GetTCPClient()
+		loginWindow.GetClientPort(),
+		loginWindow.GetClientIp(),
+		loginWindow.GetClientName(),
+		loginWindow.GetTCPClient()
 	);
 
-	mainwindow.show();	
+	mainwindow.show();
 
 
 
