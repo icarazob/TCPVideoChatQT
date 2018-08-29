@@ -28,6 +28,7 @@ private:
 
 	void SetStatusVideoRead(bool value);
 	bool GetStatusVideoRead();
+	void ChangeMicrophoneIcon(bool status);
 
 public:
     explicit MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client);
@@ -45,7 +46,7 @@ private:
 
 	std::mutex m_videoMutex;
 	std::shared_ptr<AudioProcessor> m_audio;
-
+	QString m_path;
 	
 	bool m_shouldRead = false;
 	bool m_lastStateAudioButton = false;
@@ -62,6 +63,7 @@ private slots:
 	void TurnAudio();
 	void SendAudio(QByteArray buffer, int length);
 	void ProcessAudioData(QByteArray data, int length);
+	void ClearFrameLabel();
 };
 
 #endif // MAINWINDOW_H

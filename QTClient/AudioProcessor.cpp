@@ -82,6 +82,7 @@ AudioProcessor::AudioProcessor():
 
 	m_input = m_audioInput->start();
 
+
 	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
 
 	CloseInput();

@@ -17,7 +17,8 @@ public:
 	enum PacketType {
 		P_ChatMessage,
 		P_FrameMessage,
-		P_AudioMessage
+		P_AudioMessage,
+		P_InformationMessage
 	};
 private:
 	bool ProcessPacket(PacketType &packet);
@@ -26,23 +27,27 @@ private:
 	void CreateSocket();
 	void RecieveFrame();
 	void RecieveAudio();
+	void RecieveMessage();
+	void RecieveInformationMessage();
 public:
 	TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
 	bool Connect();
 
-	void RecieveMessage();
+
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
 	void SendAudio(QByteArray buffer,int lengt);
-	void WaitWhileSendLastAudio();
+	void SendInformationMessage(std::string message);
+
 	
 	cv::Mat GetCurrentFrame();
 	
 signals:
-	void recieveEvent(QString message);
+	void recieveEventMessage(QString message);
 	void recieveEventFrame();
 	void recieveEventAudio(QByteArray,int);
+	void clearLabel();
 private:
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
@@ -53,7 +58,6 @@ private:
 	std::mutex m_mutex;
 	cv::Mat m_currentFrame;
 	std::condition_variable m_cv;
-	bool m_audioSend = false;
 	bool m_proceed = true;
 	
 };

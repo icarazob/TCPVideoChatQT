@@ -16,7 +16,8 @@ private:
 	enum PacketType {
 		P_ChatMessage,
 		P_FrameMessage,
-		P_AudioMessage
+		P_AudioMessage,
+		P_InformationMessage
 	};
 
 
@@ -32,7 +33,9 @@ private:
 	void SendFrame(SOCKET client, cv::Mat frame);
 	bool ReceiveAudio(SOCKET client,char **buffer,int &length);
 	void SendAudio(SOCKET client, char *buffer,int length);
-
+	bool ProcessInformationMessage(SOCKET client);
+	void SendInformationMessage(SOCKET client, std::string message);
+	void SendAllInformationMessage(SOCKET client,std::string message);
 public:
 	TCPServer(int port, const char *ip);
 

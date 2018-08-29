@@ -1,9 +1,6 @@
-#include <iostream>
 #include "mainwindow.h"
 #include "loginwindow.h"
 #include <QApplication>
-#include <QEventLoop>
-#include <QObject>	
 
 
 

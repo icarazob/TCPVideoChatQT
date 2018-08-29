@@ -11,8 +11,6 @@
 
 
 
-
-
 MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<TCPClient> client) :
 	QMainWindow(0),
 	m_port(port),
@@ -26,11 +24,6 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	m_nativeFrameLabel = new NativeFrameLabel(this);
 	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
 
-	if (!m_client->Connect())
-	{
-		exit();
-	}
-
 	m_audio = std::make_shared<AudioProcessor>();
 
 	ui->nameLabel->setText(name);
@@ -42,6 +35,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QString icon1ImagePath = appPath + "/images/Stop.png";
 	QString icon2ImagePath = appPath + "/images/Play.png";
 	QString icon3ImagePath = appPath + "/images/microphone.png";
+	m_path = appPath;
 
 	icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
 	icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
@@ -58,11 +52,12 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
-	QObject::connect(m_client.get(), SIGNAL(recieveEvent(QString)), this, SLOT(UpdatePlainText(QString)));
-	//QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
+	QObject::connect(m_client.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(UpdatePlainText(QString)));
+	QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
+	QObject::connect(m_client.get(), SIGNAL(clearLabel()), this, SLOT(ClearFrameLabel()));
 }
 
 MainWindow::~MainWindow()
@@ -79,7 +74,7 @@ void MainWindow::ShowFrame()
 	}
 	else
 	{
-		ui->label->clear();
+		ClearFrameLabel();
 	}
 
 	return;
@@ -102,7 +97,7 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 
 		if (!m_capture.isOpened())
 		{
-			ui->label->clear();
+			ClearFrameLabel();
 			m_nativeFrameLabel->Clear();
 			return;
 		}
@@ -141,8 +136,10 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 		}
 
 		m_capture.release();
-		ui->label->clear();
+		ClearFrameLabel();
 		m_nativeFrameLabel->Clear();
+
+		m_client->SendInformationMessage("Stop Video");
 		return;
 	};
 
@@ -211,8 +208,9 @@ void MainWindow::StopVideoStream()
 
 
 	Q_EMIT videoStream(false);
-	ui->label->clear();
+	ClearFrameLabel();
 	m_nativeFrameLabel->Clear();
+
 	return;
 
 }
@@ -222,10 +220,12 @@ void MainWindow::TurnAudio()
 	if (!m_lastStateAudioButton)
 	{
 		m_audio->StartInput();
+		ChangeMicrophoneIcon(true);
 	}
 	else
 	{
 		m_audio->CloseInput();
+		ChangeMicrophoneIcon(false);
 	}
 
 	m_lastStateAudioButton = !m_lastStateAudioButton;
@@ -240,6 +240,10 @@ void MainWindow::SendAudio(QByteArray buffer, int length)
 void MainWindow::ProcessAudioData(QByteArray data, int length)
 {
 	m_audio->ProcessData(data, length);
+}
+void MainWindow::ClearFrameLabel()
+{
+	ui->label->clear();
 }
 bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 {
@@ -295,4 +299,24 @@ bool MainWindow::GetStatusVideoRead()
 {
 	std::lock_guard<std::mutex> lock(m_videoMutex);
 	return m_shouldRead;
+}
+
+void MainWindow::ChangeMicrophoneIcon(bool status)
+{
+	QIcon icon;
+	QString iconPath;
+	if (status)
+	{
+		iconPath = m_path + "/images/crossed_microphone.png";
+
+	}
+	else
+	{
+		iconPath = m_path + "/images/microphone.png";
+	}
+
+	icon.addFile(iconPath, QSize(), QIcon::Selected, QIcon::On);
+
+	ui->audioButton->setIcon(icon);
+	return;
 }

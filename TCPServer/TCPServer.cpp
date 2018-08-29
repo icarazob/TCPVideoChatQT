@@ -66,7 +66,7 @@ void TCPServer::ShowServerInformation()
 
 cv::Mat TCPServer::RecieveFrame(SOCKET client)
 {
-	cv::Mat recieveFrame = cv::Mat::zeros(371,441,CV_8UC3);
+	cv::Mat recieveFrame = cv::Mat::zeros(391,751,CV_8UC3);
 	char* uptr = (char*)recieveFrame.data;
 
 	int frameSize;
@@ -134,12 +134,13 @@ bool TCPServer::ReceiveAudio(SOCKET client,char **buffer,int &length)
 		return false;
 	}
 
-	 char *tempBuffer = new  char[bufferSize];
+	char *tempBuffer = new char[bufferSize+1];
+	tempBuffer[bufferSize] = '\0';
 
 	int resultBuffer = recv(client, tempBuffer, bufferSize, NULL);
 	if (resultBuffer == SOCKET_ERROR)
 	{
-		std::cerr << "Can't recieve bytes of audio" << GetLastError() << std::endl;
+		std::cerr << "Can't receive bytes of audio" << GetLastError() << std::endl;
 		return false;
 	}
 
@@ -182,6 +183,70 @@ void TCPServer::SendAudio(SOCKET client,char * buffer, int length)
 	
 
 	
+}
+
+bool TCPServer::ProcessInformationMessage(SOCKET client)
+{
+	std::string message;
+	bool resultMessage = RecieveMessage(client, message);
+
+	if (!resultMessage)
+	{
+		return false;
+	}
+
+	if (message.compare("Stop Video") == 0)
+	{
+		std::cout << "Send stop video" << std::endl;
+		SendAllInformationMessage(client, "Stop Video");
+	}
+
+	return true;
+}
+
+void TCPServer::SendInformationMessage(SOCKET client, std::string message)
+{
+	PacketType packet = P_InformationMessage;
+
+	int resultPacket = send(client, (char*)&packet, sizeof(packet), NULL);
+	if (resultPacket == SOCKET_ERROR)
+	{
+		std::cerr << "Information: can't send a packet" << GetLastError() << std::endl;
+		return;
+	}
+
+	int messageSize = message.size();
+	int resultInt = send(client, (char*)&messageSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
+		return;
+	}
+
+	int result = send(client, message.c_str(), messageSize, NULL);
+
+	if (result == SOCKET_ERROR)
+	{
+		std::cerr << "Don't send message for client" << GetLastError() << std::endl;
+		return;
+	}
+
+}
+
+void TCPServer::SendAllInformationMessage(SOCKET client, std::string message)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	for (int i = 0; i < m_clients.size(); i++)
+	{
+		if (m_clients[i] == client)
+		{
+			continue;
+		}
+
+		SendInformationMessage(m_clients[i], "Stop Video");
+	}
 }
 
 TCPServer::~TCPServer()
@@ -257,15 +322,25 @@ bool TCPServer::ProcessPacket(SOCKET client,PacketType & packet)
 			{
 				if (m_clients[i] == client)
 				{
-					SendAudio(m_clients[i], audio, length);
+					continue;
 				}
 
+				SendAudio(m_clients[i], audio, length);
 
 			}
 
 			delete[]audio;
 		}
 
+		break;
+	}
+
+	case P_InformationMessage:
+	{
+		if (!ProcessInformationMessage(client))
+		{
+			return false;
+		}
 		break;
 	}
 
