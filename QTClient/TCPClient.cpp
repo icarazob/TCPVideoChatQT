@@ -156,7 +156,7 @@ void TCPClient::RecieveMessage()
 
 	if (resultInt == SOCKET_ERROR)
 	{
-		std::cerr << "Error: recv message!" << std::endl;
+		qDebug() << "RecieveMessage: error size";
 		exit(1);
 	}
 	char *buffer = new char[messageSize + 1];
@@ -165,7 +165,7 @@ void TCPClient::RecieveMessage()
 	int result = recv(m_connection, buffer, messageSize, NULL);
 	if (result == SOCKET_ERROR)
 	{
-		std::cerr << "Error: recv message!" << std::endl;
+		qDebug() << "RecieveMessage: error message";
 		exit(1);
 	}
 
@@ -186,7 +186,7 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 
 	if (resultInt == SOCKET_ERROR)
 	{
-		std::cerr << "Error: recv message!" << std::endl;
+		qDebug() << "RecieveInformationMessage: error size";
 		exit(1);
 	}
 	char *buffer = new char[messageSize + 1];
@@ -195,7 +195,7 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	int result = recv(m_connection, buffer, messageSize, NULL);
 	if (result == SOCKET_ERROR)
 	{
-		std::cerr << "Error: recv message!" << std::endl;
+		qDebug() << "RecieveInformationMessage: error message";
 		exit(1);
 	}
 
@@ -207,6 +207,8 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 		Q_EMIT clearLabel();
 	}
 	message = stringMessage;
+
+	delete[]buffer;
 
 	return;
 
@@ -220,7 +222,7 @@ void TCPClient::SendMessageWithoutName(std::string message)
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resultPacket == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send packet message" << GetLastError() << std::endl;
+		qDebug() << "SendMessageWithoutName: error send packet";
 		return;
 	}
 	int messageSize = message.size();
@@ -229,7 +231,7 @@ void TCPClient::SendMessageWithoutName(std::string message)
 
 	if (resultInt == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendMessageWithoutName: error send size";
 		return;
 	}
 
@@ -237,9 +239,11 @@ void TCPClient::SendMessageWithoutName(std::string message)
 
 	if (result == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendMessageWithoutName: error send message";
 		return;
 	}
+
+	return;
 }
 void TCPClient::SendMessage(std::string message)
 {
@@ -250,7 +254,7 @@ void TCPClient::SendMessage(std::string message)
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if(resultPacket == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send packet message" << GetLastError() << std::endl;
+		qDebug() << "SendMessage: error send packet";
 		return;
 	}
 
@@ -262,7 +266,7 @@ void TCPClient::SendMessage(std::string message)
 
 	if (resultInt == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendMessage: error send size";
 		return;
 	}
 
@@ -270,7 +274,7 @@ void TCPClient::SendMessage(std::string message)
 
 	if (result == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendMessage: error send message";
 		return;
 	}
 }
@@ -285,6 +289,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 
 	if (resultPacket == SOCKET_ERROR)
 	{
+		qDebug() << "SendFrame: error send packet";
 		return;
 	}
 	frame = (frame.reshape(0, 1));
@@ -295,6 +300,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 
 	if (resultInt == SOCKET_ERROR)
 	{
+		qDebug() << "SendFrame: error send size";
 		return;
 	}
 	//send frame
@@ -302,6 +308,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 
 	if (resultInt == SOCKET_ERROR)
 	{
+		qDebug() << "SendFrame: error send frame";
 		return;
 	}
 	
@@ -310,12 +317,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 
 void TCPClient::SendAudio(QByteArray buffer, int length)
 {
-	while (!m_proceed)
-	{
 
-	}
-
-	m_proceed = false;
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	PacketType packet = P_AudioMessage;
@@ -323,6 +325,7 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 	int resutlPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resutlPacket == SOCKET_ERROR)
 	{
+		qDebug() << "SendAudio: error send packet";
 		return;
 	}
 
@@ -330,6 +333,7 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 	int resultInt = send(m_connection, (char*)&length, sizeof(int), NULL);
 	if (resultInt == SOCKET_ERROR)
 	{
+		qDebug() << "SendAudio: error send size";
 		return;
 	}
 
@@ -337,10 +341,10 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 	int resultData = send(m_connection,buffer.data(), length, NULL);
 	if (resultData == SOCKET_ERROR)
 	{
+		qDebug() << "SendAudio: error send audio";
 		return;
 	}
 
-	m_proceed = true;
 
 }
 
@@ -352,6 +356,7 @@ void TCPClient::SendInformationMessage(std::string message)
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resultPacket == SOCKET_ERROR)
 	{
+		qDebug() << "SendInformationMessage: error send packet";
 		return;
 	}
 
@@ -361,7 +366,7 @@ void TCPClient::SendInformationMessage(std::string message)
 
 	if (resultInt == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendInformationMessage: error send size";
 		return;
 	}
 
@@ -369,7 +374,7 @@ void TCPClient::SendInformationMessage(std::string message)
 
 	if (result == SOCKET_ERROR)
 	{
-		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		qDebug() << "SendInformationMessage: error send message";
 		return;
 	}
 
@@ -394,6 +399,7 @@ void TCPClient::RecieveFrame()
 
 	if (resultInt == SOCKET_ERROR)
 	{
+		qDebug() << "RecieveFrame: error  size";
 		return;
 	}
 
@@ -401,6 +407,7 @@ void TCPClient::RecieveFrame()
 
 	if (resultFrame == SOCKET_ERROR)
 	{
+		qDebug() << "RecieveFrame: error  frame";
 		return;
 	}
 
@@ -419,7 +426,7 @@ void TCPClient::RecieveAudio()
 	int resultInt = recv(m_connection, (char*)&length, sizeof(int), NULL);
 	if (resultInt == SOCKET_ERROR)
 	{
-		qDebug() << "Audio: don't receive length";
+		qDebug() << "RecieveAudio: error  size";
 		return;
 	}
 
@@ -429,7 +436,7 @@ void TCPClient::RecieveAudio()
 	int resultData = recv(m_connection, buffer, length, NULL);
 	if (resultData == SOCKET_ERROR)
 	{
-		qDebug() << "Audio: don't receive buffer" << resultData;
+		qDebug() << "RecieveAudio: error  audio";
 		return;
 	}
 

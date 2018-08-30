@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QBuffer>
 #include <QEventLoop>
+
 void AudioProcessor::InitializeAudio()
 {
 	m_format.setChannelCount(1);
@@ -82,7 +83,6 @@ AudioProcessor::AudioProcessor():
 
 	m_input = m_audioInput->start();
 
-
 	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
 
 	CloseInput();
@@ -102,7 +102,14 @@ void AudioProcessor::StartInput()
 
 void AudioProcessor::ProcessData(QByteArray buffer, int length)
 {
-	m_output->write(buffer.data(), length);
+	if (!m_Outputdevice.isNull())
+	{
+		if (m_output->isOpen())
+		{
+			m_output->write(buffer.data(), length);
+		}
+	}
+
 }
 
 AudioProcessor::~AudioProcessor()

@@ -286,7 +286,7 @@ void TCPServer::RecievePacket(SOCKET client,PacketType & packet)
 
 	if (resultPacket == SOCKET_ERROR)
 	{
-		std::cout << "RecievePacket: error to recieve packet" << GetLastError() << std::endl;
+		std::cout << "RecievePacket: error to receive packet" << GetLastError() << std::endl;
 	}
 
 	return;
@@ -480,6 +480,8 @@ bool TCPServer::RecieveMessage(SOCKET client, std::string & message)
 	message = buffer;
 
 	delete[]buffer;
+
+	return true;
 }
 
 void TCPServer::DeleteClient(SOCKET client)

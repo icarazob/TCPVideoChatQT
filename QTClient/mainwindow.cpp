@@ -7,7 +7,7 @@
 #include <Windows.h>
 #include <QMessageBox>
 #include <QKeyEvent>
-
+#include <QDebug>
 
 
 
@@ -97,6 +97,7 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 
 		if (!m_capture.isOpened())
 		{
+			qDebug() << "Can't open camera!";
 			ClearFrameLabel();
 			m_nativeFrameLabel->Clear();
 			return;

@@ -25,7 +25,7 @@ DB & DB::GetInstance()
 
 void DB::OpenDataBase()
 {
-	QString dbPath = m_path + "/db/chat.db";
+	QString dbPath = m_path + "/database/chat.db";
 
 	m_db->setDatabaseName(dbPath);
 
