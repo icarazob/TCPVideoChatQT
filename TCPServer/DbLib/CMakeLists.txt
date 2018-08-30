@@ -1,4 +1,4 @@
-set(LIB_NAME db)
+set(LIB_NAME DbLib)
 
 set(HEADER_FILES
 	db.h

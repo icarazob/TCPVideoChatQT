@@ -1,6 +1,6 @@
 #pragma once
-#ifndef DB_H
-#define DB_H
+#ifndef DbLLib_H
+#define DbLLib_H
 #include <QSqlQueryModel>
 #include <QSqlQuery>
 #include <QSql>
@@ -32,7 +32,8 @@ private:
 	void operator = (const DB&) = delete;
 
 private:
-	std::unique_ptr<QSqlDatabase> db;
-	std::unique_ptr<QSqlQuery> query;
+	std::unique_ptr<QSqlDatabase> m_db;
+	std::unique_ptr<QSqlQuery> m_query;
+	QString m_path;
 };
-#endif // !DB_H
+#endif // !DbLLib_H

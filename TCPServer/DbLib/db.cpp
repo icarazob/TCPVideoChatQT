@@ -1,19 +1,20 @@
 #include "db.h"
 #include <iostream>
-
+#include <QCoreApplication>
 
 
 DB::DB():
-	db(std::make_unique<QSqlDatabase>(QSqlDatabase::addDatabase("QSQLITE"))),
-	query(nullptr)
+	m_db(std::make_unique<QSqlDatabase>(QSqlDatabase::addDatabase("QSQLITE"))),
+	m_query(nullptr)
 {
 	OpenDataBase();
 	ClearTableClient();
+	m_path = QCoreApplication::applicationDirPath();
 }
 
 DB::~DB()
 {
-	db->close();
+	m_db->close();
 }
 
 DB & DB::GetInstance()
@@ -24,32 +25,33 @@ DB & DB::GetInstance()
 
 void DB::OpenDataBase()
 {
-	QString dbPath = "E:\\Database\\chat.db";
+	QString dbPath = m_path + "/db/chat.db";
 
-	db->setDatabaseName(dbPath);
+	m_db->setDatabaseName(dbPath);
 
-	bool opened = db->open();
+	bool opened = m_db->open();
 
 	if (!opened)
 	{
 		std::cout << "Not open" << std::endl;
+		exit(1);
 	}
 
 
-	query = std::make_unique<QSqlQuery>(*db);
+	m_query = std::make_unique<QSqlQuery>(*m_db);
 }
 
 int DB::GetLastInsertedId() const
 {
 	int value = 0;
 
-	query->prepare("SELECT MAX(id) from client;");
+	m_query->prepare("SELECT MAX(id) from client;");
 
-	query->exec();
+	m_query->exec();
 
-	if (query->next())
+	if (m_query->next())
 	{
-		value = query->value(0).toInt();
+		value = m_query->value(0).toInt();
 	}
 	else
 	{
@@ -61,17 +63,17 @@ int DB::GetLastInsertedId() const
 
 bool DB::CheckIfClientWithSameNameExist(std::string name) const
 {
-	query->prepare("SELECT COUNT(1) FROM client WHERE name=:name;");
+	m_query->prepare("SELECT COUNT(1) FROM client WHERE name=:name;");
 
-	query->bindValue(":name", QString::fromStdString(name));
+	m_query->bindValue(":name", QString::fromStdString(name));
 
-	bool result = query->exec();
+	bool result = m_query->exec();
 
 	if (result)
 	{
-		if (query->next())
+		if (m_query->next())
 		{
-			int count = query->value(0).toInt();
+			int count = m_query->value(0).toInt();
 
 			if (count >= 1)
 			{
@@ -98,12 +100,12 @@ bool DB::InserClientInfo(const std::string name, int & insertedId) const
 		id = GetLastInsertedId();
 	}
 
-	query->prepare("INSERT INTO client (id,name) VALUES(:id,:name);");
+	m_query->prepare("INSERT INTO client (id,name) VALUES(:id,:name);");
 	
-	query->bindValue(":id", id);
-	query->bindValue(":name", QString::fromStdString(name));
+	m_query->bindValue(":id", id);
+	m_query->bindValue(":name", QString::fromStdString(name));
 
-	bool result = query->exec();
+	bool result = m_query->exec();
 
 	if (result)
 	{
@@ -116,30 +118,30 @@ bool DB::InserClientInfo(const std::string name, int & insertedId) const
 
 bool DB::DeleteClient(std::string name)
 {
-	query->prepare("DELETE FROM client where name=:name;");
+	m_query->prepare("DELETE FROM client where name=:name;");
 
-	query->bindValue(":name", QString::fromStdString(name));
+	m_query->bindValue(":name", QString::fromStdString(name));
 
-	bool result = query->exec();
+	bool result = m_query->exec();
 
 	return result;
 }
 
 void DB::ShowAllClients()
 {
-	query->prepare("SELECT * FROM client;");
+	m_query->prepare("SELECT * FROM client;");
 
-	bool res = query->exec();
+	bool res = m_query->exec();
 
 	if (res)
 	{
 		std::vector<ClientInfo> vectorClients;
-		while (query->next())
+		while (m_query->next())
 		{
 			ClientInfo client;
 
-			client.id = query->value(0).toInt();
-			client.name = query->value(1).toString();
+			client.id = m_query->value(0).toInt();
+			client.name = m_query->value(1).toString();
 
 			vectorClients.push_back(client);
 		}
@@ -157,16 +159,16 @@ std::vector<std::string> DB::SelectNameOfAllClients()
 	std::vector<std::string> vectorNames;
 	vectorNames.resize(0);
 
-	query->prepare("SELECT name FROM client;");
+	m_query->prepare("SELECT name FROM client;");
 
-	bool result = query->exec();
+	bool result = m_query->exec();
 
 	if (result)
 	{
 		
-		while (query->next())
+		while (m_query->next())
 		{
-			QString name = query->value(0).toString();
+			QString name = m_query->value(0).toString();
 
 			vectorNames.push_back(name.toStdString());
 		}
@@ -177,9 +179,9 @@ std::vector<std::string> DB::SelectNameOfAllClients()
 
 void DB::ClearTableClient()
 {
-	query->prepare("DELETE FROM client;");
+	m_query->prepare("DELETE FROM client;");
 
-	query->exec();
+	m_query->exec();
 }
 
 // void DB::SelectTable()
