@@ -32,18 +32,49 @@ bool TCPServer::Run()
 		SOCKET newClient = 0;
 		if (newClient = accept(m_listenSocket, (SOCKADDR*)&m_addr, &sizeOfAddr))
 		{
-			std::cout << "Client connected!" << std::endl;
 
-			//Add new client to container
+			//Receive packet of the client
+			PacketType packet;
+			RecievePacket(newClient, packet);
+
+			if (packet == P_ChatMessage)
 			{
-				std::lock_guard<std::mutex> lock(m_mutex);
-				m_clients.push_back(newClient);
-			}
-			//Create thread for new client
-			std::thread td(CreateHandler(), m_clients.size() - 1);
+				//Receive name of the client
+				std::string name;
+				bool result = RecieveMessage(newClient, name);
 
-			//detach thread
-			td.detach();
+				if (result)
+				{
+					//Insert a new client
+					int id = 0;
+					bool insertStatus = DB::GetInstance().InserClientInfo(name, id);
+
+					if (insertStatus)
+					{
+						std::cout << "Client connected!" << std::endl;
+
+						//Send connected
+						SendInformationMessage(newClient, "Connected");
+
+						//Add new client to container
+						{
+							std::lock_guard<std::mutex> lock(m_mutex);
+							m_clients.push_back(newClient);
+							m_names.push_back(name);
+						}
+						//Create thread for new client
+						std::thread td(CreateHandler(), m_clients.size() - 1);
+
+						//detach thread
+						td.detach();
+					}
+					else
+					{
+						SendInformationMessage(newClient, "Client with the same name exist");
+					}
+				}
+			}
+
 		}
 		else
 		{
@@ -249,6 +280,18 @@ void TCPServer::SendAllInformationMessage(SOCKET client, std::string message)
 	}
 }
 
+void TCPServer::RecievePacket(SOCKET client,PacketType & packet)
+{
+	int resultPacket = recv(client, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		std::cout << "RecievePacket: error to recieve packet" << GetLastError() << std::endl;
+	}
+
+	return;
+}
+
 TCPServer::~TCPServer()
 {
 	
@@ -443,8 +486,18 @@ void TCPServer::DeleteClient(SOCKET client)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	auto position = std::find(m_clients.begin(), m_clients.end(), client);
-	m_clients.erase(position);
+	auto clientIt = std::find(m_clients.begin(), m_clients.end(), client);
+	int positionInt = clientIt - m_clients.begin();
+	auto nameIt = m_names.begin() + positionInt;
+
+	//delete from db
+	DB::GetInstance().DeleteClient(m_names[positionInt]);
+
+	//Delete socket
+	m_clients.erase(clientIt);
+
+	//Delete name
+	m_names.erase(nameIt);
 
 	return;
 }
@@ -468,6 +521,8 @@ std::function<void (int)> TCPServer::CreateHandler()
 			{
 				std::cout << "Close Thread!" << std::endl;
 				DeleteClient(client);
+
+				DB::GetInstance().ShowAllClients();
 				return;
 			}
 

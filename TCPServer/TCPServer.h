@@ -4,6 +4,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include "db/db.h"
 #pragma comment(lib,"ws2_32.lib")
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -13,13 +14,13 @@ namespace cv {
 }
 class TCPServer {
 private:
+
 	enum PacketType {
 		P_ChatMessage,
 		P_FrameMessage,
 		P_AudioMessage,
 		P_InformationMessage
 	};
-
 
 	bool ProcessPacket(SOCKET client,PacketType &packet);
 	void InitializeWSA();
@@ -36,6 +37,7 @@ private:
 	bool ProcessInformationMessage(SOCKET client);
 	void SendInformationMessage(SOCKET client, std::string message);
 	void SendAllInformationMessage(SOCKET client,std::string message);
+	void RecievePacket(SOCKET client,PacketType &packet);
 public:
 	TCPServer(int port, const char *ip);
 
@@ -47,6 +49,7 @@ private:
 	WSADATA m_wsaData;
 	SOCKET m_listenSocket = 0;
 	std::vector<SOCKET> m_clients;
+	std::vector<std::string> m_names;
 	SOCKADDR_IN m_addr;
 	std::string m_ip;
 	std::mutex m_mutex;

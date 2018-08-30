@@ -28,13 +28,13 @@ private:
 	void RecieveFrame();
 	void RecieveAudio();
 	void RecieveMessage();
-	void RecieveInformationMessage();
+	void RecieveInformationMessage(std::string &message);
 public:
 	TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
 	bool Connect();
 
-
+	void SendMessageWithoutName(std::string message);
 	void SendMessage(std::string message);
 	void SendFrame(cv::Mat frame);
 	void SendAudio(QByteArray buffer,int lengt);

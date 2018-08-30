@@ -1,18 +1,11 @@
 #pragma once
 #include "TCPServer.h"
-#include "db/db.h"
 #include <iostream>
 
 
 
 int main()
 {
-	DB *object = new DB();
-	object->OpenDataBase();
-
-	object->SelectTable();
-
-
 	const int port = 5000;
 	std::string ip = "ADDR_ANY";
 

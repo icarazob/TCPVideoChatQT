@@ -14,6 +14,7 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 		return false;
 	}
 
+	std::string message;
 	switch (packet)
 	{
 	case P_AudioMessage:
@@ -34,7 +35,7 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 	}
 	case P_InformationMessage:
 	{
-		RecieveInformationMessage();
+		RecieveInformationMessage(message);
 		break;
 	}
 
@@ -113,14 +114,34 @@ bool TCPClient::Connect()
 	int result = ::connect(m_connection, (SOCKADDR*)&m_addr, sizeof(m_addr));
 	if ( result == 0)
 	{
+		//Send name
+		SendMessageWithoutName(m_name);
 
-		//Create thread
-		std::thread td(CreateProcessHandler());
+		//Receive Information
+		PacketType packet;
+		
+		int resultPacket = recv(m_connection, (char*)&packet, sizeof(packet), NULL);
+		if (resultPacket != SOCKET_ERROR)
+		{
+			std::string message;
+			RecieveInformationMessage(message);
 
-		//detach thread
-		td.detach();
+			if (message.compare("Client with the same name exist") == 0)
+			{
+				return false;
+			}
+			else if (message.compare("Connected") == 0)
+			{
+				//Create thread
+				std::thread td(CreateProcessHandler());
 
-		return true;
+				//detach thread
+				td.detach();
+
+				return true;
+			}
+		}
+
 	}
 
 
@@ -158,7 +179,7 @@ void TCPClient::RecieveMessage()
 	
 	return;
 }
-void TCPClient::RecieveInformationMessage()
+void TCPClient::RecieveInformationMessage(std::string &message)
 {
 	int messageSize = 0;
 	int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
@@ -180,12 +201,45 @@ void TCPClient::RecieveInformationMessage()
 
 	std::string stringMessage = buffer;
 
+
 	if (stringMessage.compare("Stop Video") == 0)
 	{
 		Q_EMIT clearLabel();
 	}
+	message = stringMessage;
 
+	return;
 
+}
+void TCPClient::SendMessageWithoutName(std::string message)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	PacketType packet = P_ChatMessage;
+
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+	if (resultPacket == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send packet message" << GetLastError() << std::endl;
+		return;
+	}
+	int messageSize = message.size();
+
+	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		return;
+	}
+
+	int result = send(m_connection, message.c_str(), messageSize, NULL);
+
+	if (result == SOCKET_ERROR)
+	{
+		std::cerr << "Can't send message" << GetLastError() << std::endl;
+		return;
+	}
 }
 void TCPClient::SendMessage(std::string message)
 {

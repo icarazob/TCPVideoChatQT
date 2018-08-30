@@ -9,19 +9,28 @@
 #include <memory>
 
 class DB {
+
 	struct ClientInfo {
 		int id;
 		QString name;
 	};
 
 public:
-	DB();
-	~DB()
-	{
-		db->close();
-	}
+	static DB& GetInstance();
 	void OpenDataBase();
-	void SelectTable();
+	int GetLastInsertedId() const;
+	bool CheckIfClientWithSameNameExist(std::string name) const;
+	bool InserClientInfo(const std::string name, int &insertedId) const;
+	bool DeleteClient(std::string name);
+	void ShowAllClients();
+	std::vector<std::string> SelectNameOfAllClients();
+	void ClearTableClient();
+private:
+	DB();
+	~DB();
+	DB(const DB&) = delete;
+	void operator = (const DB&) = delete;
+
 private:
 	std::unique_ptr<QSqlDatabase> db;
 	std::unique_ptr<QSqlQuery> query;
