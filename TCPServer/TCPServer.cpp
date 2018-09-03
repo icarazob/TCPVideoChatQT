@@ -51,10 +51,19 @@ bool TCPServer::Run()
 
 					if (insertStatus)
 					{
-						std::cout << "Client connected!" << std::endl;
-
 						//Send connected
 						SendInformationMessage(newClient, "Connected");
+						std::cout << "Client connected!" << std::endl;
+
+						//Receive setup message
+						RecievePacket(newClient, packet);
+						if (packet == P_InformationMessage)
+						{
+							if (!ProcessInformationMessage(newClient))
+							{
+								continue;
+							}
+						}
 
 						//Add new client to container
 						{
@@ -62,6 +71,9 @@ bool TCPServer::Run()
 							m_clients.push_back(newClient);
 							m_names.push_back(name);
 						}
+
+						SendClientsList();
+
 						//Create thread for new client
 						std::thread td(CreateHandler(), m_clients.size() - 1);
 
@@ -229,10 +241,15 @@ bool TCPServer::ProcessInformationMessage(SOCKET client)
 	if (message.compare("Stop Video") == 0)
 	{
 		std::cout << "Send stop video" << std::endl;
-		SendAllInformationMessage(client, "Stop Video");
+		SendAllWithoutClientInformationMessage(client, "Stop Video");
+		return true;
+	}
+	else if (message.compare("Setup") == 0)
+	{
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void TCPServer::SendInformationMessage(SOCKET client, std::string message)
@@ -265,7 +282,7 @@ void TCPServer::SendInformationMessage(SOCKET client, std::string message)
 
 }
 
-void TCPServer::SendAllInformationMessage(SOCKET client, std::string message)
+void TCPServer::SendAllWithoutClientInformationMessage(SOCKET client, std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -276,7 +293,17 @@ void TCPServer::SendAllInformationMessage(SOCKET client, std::string message)
 			continue;
 		}
 
-		SendInformationMessage(m_clients[i], "Stop Video");
+		SendInformationMessage(m_clients[i], message);
+	}
+}
+
+void TCPServer::SendAllInformationMessage(std::string message)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	for (int i = 0; i < m_clients.size(); i++)
+	{
+		SendInformationMessage(m_clients[i], message);
 	}
 }
 
@@ -290,6 +317,22 @@ void TCPServer::RecievePacket(SOCKET client,PacketType & packet)
 	}
 
 	return;
+}
+
+void TCPServer::SendClientsList()
+{
+	SendAllInformationMessage("List");
+
+	std::string strList;
+	auto listOfClients = DB::GetInstance().SelectNameOfAllClients();
+
+	for (auto &clientName : listOfClients)
+	{
+		strList.append(clientName);
+		strList.append(" ");
+	}
+
+	SendAllInformationMessage(strList);
 }
 
 TCPServer::~TCPServer()
@@ -501,6 +544,7 @@ void TCPServer::DeleteClient(SOCKET client)
 	//Delete name
 	m_names.erase(nameIt);
 
+
 	return;
 }
 
@@ -524,7 +568,7 @@ std::function<void (int)> TCPServer::CreateHandler()
 				std::cout << "Close Thread!" << std::endl;
 				DeleteClient(client);
 
-				DB::GetInstance().ShowAllClients();
+				SendClientsList();
 				return;
 			}
 

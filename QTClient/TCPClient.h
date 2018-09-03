@@ -29,6 +29,7 @@ private:
 	void RecieveAudio();
 	void RecieveMessage();
 	void RecieveInformationMessage(std::string &message);
+	void ReceiveMessage(std::string &message);
 public:
 	TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
@@ -42,12 +43,14 @@ public:
 
 	
 	cv::Mat GetCurrentFrame();
+	bool isSameName();
 	
 signals:
 	void recieveEventMessage(QString message);
 	void recieveEventFrame();
 	void recieveEventAudio(QByteArray,int);
 	void clearLabel();
+	void updateList(QString);
 private:
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
@@ -59,5 +62,6 @@ private:
 	cv::Mat m_currentFrame;
 	std::condition_variable m_cv;
 	bool m_proceed = true;
+	bool m_sameName = false;
 	
 };

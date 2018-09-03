@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QXmlStreamReader>
 #include <QCoreApplication>
+#include <QRegExpValidator>
+#include <QTimer>
 
 bool loginwindow::CheckIp()
 {
@@ -91,7 +93,17 @@ loginwindow::loginwindow(QDialog *parent) :
 
 	ReadXmlSettings(xmlPath);
 
+
+	QRegExp exp("([a-z]|[1-9]|[A-Z]){1,15}");
+	QRegExpValidator *validator = new QRegExpValidator(exp, this);
+	ui->nameLineEdit->setValidator(validator);
+
+
+
+	QTimer::singleShot(0, ui->nameLineEdit, SLOT(setFocus()));
 	QObject::connect(ui->okButton, SIGNAL(clicked()), SLOT(exit()));
+
+
 }
 
 QString loginwindow::GetClientIp()
@@ -164,7 +176,12 @@ void loginwindow::exit()
 		else
 		{
 			m_status = false;
-			if (ui->connectLabel->text().isEmpty())
+			if (m_client->isSameName())
+			{
+				ui->connectLabel->setText("Client with the same name exist!");
+				ui->connectLabel->setStyleSheet("color:red");
+			}
+			else
 			{
 				ui->connectLabel->setText("Can't connected!");
 				ui->connectLabel->setStyleSheet("color:red");

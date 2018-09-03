@@ -1,11 +1,14 @@
 #pragma once
 #include "TCPServer.h"
 #include <iostream>
+#include <QApplication>
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
+	QApplication app(argc, argv);
+
 	const int port = 5000;
 	std::string ip = "ADDR_ANY";
 
@@ -18,6 +21,5 @@ int main()
 	}
 	
 
-	
-	return 0;
+	return app.exec();
 }

@@ -60,10 +60,14 @@ set(HEADERS
 qt5_wrap_ui(project_headers_wrapped ${project_ui})
 qt5_wrap_cpp(project_sources_moc ${HEADERS})
 
+
 include_directories( ${OpenCV_INCLUDE_DIRS})
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES} ${project_sources_moc}
+add_executable(${PROJECT_NAME}  ${HEADERS} ${SOURCES} ${project_sources_moc}
 	${project_headers_wrapped})
 	
+set_target_properties(${PROJECT_NAME} PROPERTIES
+			WIN32_EXECUTABLE YES
+)	
 
 target_link_libraries(${PROJECT_NAME}
 		PUBLIC

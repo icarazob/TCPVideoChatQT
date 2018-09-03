@@ -12,7 +12,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(DB_FILE ${PROJECT_SOURCE_DIR}/database/chat.db)
 
 find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
-find_package(Qt5 REQUIRED COMPONENTS Core Sql)
+find_package(Qt5 REQUIRED COMPONENTS Core Sql Widgets)
 
 foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
 	file(COPY ${DB_FILE} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/database)
@@ -38,6 +38,7 @@ target_link_libraries(${execName}
 		PUBLIC
 		Qt5::Core
 		Qt5::Sql
+		Qt5::Widgets
 		DbLib
 		${OpenCV_LIBS}
 	)

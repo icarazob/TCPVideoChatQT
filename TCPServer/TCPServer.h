@@ -36,8 +36,10 @@ private:
 	void SendAudio(SOCKET client, char *buffer,int length);
 	bool ProcessInformationMessage(SOCKET client);
 	void SendInformationMessage(SOCKET client, std::string message);
-	void SendAllInformationMessage(SOCKET client,std::string message);
+	void SendAllWithoutClientInformationMessage(SOCKET client,std::string message);
+	void SendAllInformationMessage(std::string message);
 	void RecievePacket(SOCKET client,PacketType &packet);
+	void SendClientsList();
 public:
 	TCPServer(int port, const char *ip);
 

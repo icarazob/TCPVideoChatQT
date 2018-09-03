@@ -128,10 +128,12 @@ bool TCPClient::Connect()
 
 			if (message.compare("Client with the same name exist") == 0)
 			{
+				m_sameName = true;
 				return false;
 			}
 			else if (message.compare("Connected") == 0)
 			{
+				m_sameName = false;
 				//Create thread
 				std::thread td(CreateProcessHandler());
 
@@ -199,19 +201,63 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 		exit(1);
 	}
 
-	std::string stringMessage = buffer;
 
+	std::string stringMessage = buffer;
+	delete[]buffer;
 
 	if (stringMessage.compare("Stop Video") == 0)
 	{
 		Q_EMIT clearLabel();
 	}
+	else if (stringMessage.compare("List") == 0)
+	{
+		PacketType packet;
+
+		int resultPacket = recv(m_connection, (char*)&packet, sizeof(packet), NULL);
+		if (resultPacket == SOCKET_ERROR)
+		{
+			return;
+		}
+
+		if (packet == P_InformationMessage)
+		{
+			std::string listOfClients;
+			ReceiveMessage(listOfClients);
+
+			Q_EMIT updateList(QString::fromStdString(listOfClients));
+		}
+	}
 	message = stringMessage;
+
+
+	return;
+
+}
+void TCPClient::ReceiveMessage(std::string & message)
+{
+	int messageSize = 0;
+	int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "RecieveMessage: error size";
+		exit(1);
+	}
+	char *buffer = new char[messageSize + 1];
+	buffer[messageSize] = '\0';
+
+	int result = recv(m_connection, buffer, messageSize, NULL);
+	if (result == SOCKET_ERROR)
+	{
+		qDebug() << "RecieveMessage: error message";
+		exit(1);
+	}
+
+	message = buffer;
 
 	delete[]buffer;
 
 	return;
-
 }
 void TCPClient::SendMessageWithoutName(std::string message)
 {
@@ -387,6 +433,11 @@ cv::Mat TCPClient::GetCurrentFrame()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_currentFrame;
+}
+
+bool TCPClient::isSameName()
+{
+	return m_sameName;
 }
 
 void TCPClient::RecieveFrame()

@@ -64,6 +64,7 @@ private slots:
 	void SendAudio(QByteArray buffer, int length);
 	void ProcessAudioData(QByteArray data, int length);
 	void ClearFrameLabel();
+	void UpdateList(QString listOfClients);
 };
 
 #endif // MAINWINDOW_H

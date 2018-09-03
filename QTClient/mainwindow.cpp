@@ -8,6 +8,9 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <QDebug>
+#include <sstream>
+#include <vector>
+#include <string>
 
 
 
@@ -58,6 +61,9 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
 	QObject::connect(m_client.get(), SIGNAL(clearLabel()), this, SLOT(ClearFrameLabel()));
+	QObject::connect(m_client.get(), SIGNAL(updateList(QString)), SLOT(UpdateList(QString)));
+
+	m_client->SendInformationMessage("Setup");
 }
 
 MainWindow::~MainWindow()
@@ -98,7 +104,6 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 		if (!m_capture.isOpened())
 		{
 			qDebug() << "Can't open camera!";
-			ClearFrameLabel();
 			m_nativeFrameLabel->Clear();
 			return;
 		}
@@ -137,7 +142,7 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 		}
 
 		m_capture.release();
-		ClearFrameLabel();
+		//ClearFrameLabel();
 		m_nativeFrameLabel->Clear();
 
 		m_client->SendInformationMessage("Stop Video");
@@ -245,6 +250,34 @@ void MainWindow::ProcessAudioData(QByteArray data, int length)
 void MainWindow::ClearFrameLabel()
 {
 	ui->label->clear();
+}
+void MainWindow::UpdateList(QString listOfClients)
+{
+	ui->listWidget->clear();
+
+	std::string buf;
+	std::stringstream ss(listOfClients.toStdString());
+
+	std::vector<std::string> tokens;
+
+	while(ss >> buf)
+	{
+		tokens.push_back(buf);
+	}
+
+	for (auto &stringItem: tokens)
+	{
+		if (!stringItem.empty())
+		{
+			QListWidgetItem *newItem = new QListWidgetItem();
+			newItem->setText(QString::fromStdString(stringItem));
+
+			int row = ui->listWidget->row(ui->listWidget->currentItem());
+			ui->listWidget->insertItem(row, newItem);
+		}
+
+	}
+
 }
 bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 {
