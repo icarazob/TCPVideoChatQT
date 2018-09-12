@@ -248,6 +248,30 @@ bool TCPServer::ProcessInformationMessage(SOCKET client)
 	{
 		return true;
 	}
+	else if (message.compare("Save History") == 0)
+	{
+		SaveMessageHistoryOfClient(client);
+	}
+	else if (message.compare("History") == 0)
+	{
+		std::string clientName;
+		PacketType packet;
+
+		if (ProcessPacket(client, packet))
+		{
+			if (packet == P_ChatMessage)
+			{
+				RecieveMessage(client, clientName);
+
+				//Get History from database
+
+				//
+			}
+
+		}
+
+
+	}
 
 	return false;
 }
@@ -333,6 +357,33 @@ void TCPServer::SendClientsList()
 	}
 
 	SendAllInformationMessage(strList);
+}
+
+void TCPServer::SaveMessageHistoryOfClient(SOCKET client)
+{
+	PacketType packet;
+	RecievePacket(client, packet);
+	std::string clientName;
+
+	if (packet == P_ChatMessage && RecieveMessage(client, clientName))
+	{
+		RecievePacket(client, packet);
+
+		//Receive ten messages
+		std::string clientMessages;
+		if (packet == P_ChatMessage && RecieveMessage(client, clientMessages))
+		{
+			//Find id of client 
+			int clientID = DB::GetInstance().GetClientIDByName(clientName);
+			
+			if (clientID != -1)
+			{
+				std::cout << clientID << std::endl;
+			}
+
+		}
+	}
+
 }
 
 TCPServer::~TCPServer()

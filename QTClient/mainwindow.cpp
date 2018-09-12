@@ -11,6 +11,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <QSound>
 
 
 
@@ -24,7 +25,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	ui->setupUi(this);
 	m_client = client;
 
-	m_nativeFrameLabel = new NativeFrameLabel(this);
+	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this);
 	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
 
 	m_audio = std::make_shared<AudioProcessor>();
@@ -57,17 +58,22 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(m_client.get(), SIGNAL(recieveEventFrame()), SLOT(ShowFrame()));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(UpdatePlainText(QString)));
 	QObject::connect(m_client.get(), SIGNAL(recieveEventAudio(QByteArray,int)), SLOT(ProcessAudioData(QByteArray,int)));
-	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel, SLOT(ChangedCondition(bool)));
+	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel.get(), SLOT(ChangedCondition(bool)));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(m_audio.get(), SIGNAL(audioDataPreapre(QByteArray, int)), SLOT(SendAudio(QByteArray, int)));
 	QObject::connect(m_client.get(), SIGNAL(clearLabel()), this, SLOT(ClearFrameLabel()));
 	QObject::connect(m_client.get(), SIGNAL(updateList(QString)), SLOT(UpdateList(QString)));
+	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()), this, SLOT(ListItemClicked()));
+
 
 	m_client->SendInformationMessage("Setup");
 }
 
 MainWindow::~MainWindow()
 {
+	QString message = m_name + " is disconnected!";
+	m_client->SendMessageWithoutName(message.toStdString());
+
 	delete ui;
 }
 void MainWindow::ShowFrame()
@@ -98,7 +104,6 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 
 		m_capture.open(0);
 
-
 		cv::Mat frame;
 
 		if (!m_capture.isOpened())
@@ -107,8 +112,6 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 			m_nativeFrameLabel->Clear();
 			return;
 		}
-
-
 
 		while (true)
 		{
@@ -124,25 +127,19 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 				cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
 				m_client->SendFrame(frame);
 
-
 				cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
 				cv::cvtColor(frame, frame, CV_BGR2RGB);
 				m_nativeFrameLabel->SetFrame(frame);
-				// ui->nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
 
-
-				char c = cv::waitKey(25);
+				cv::waitKey(25);
 			}
 			else
 			{
 				break;
 			}
-
-
 		}
 
 		m_capture.release();
-		//ClearFrameLabel();
 		m_nativeFrameLabel->Clear();
 
 		m_client->SendInformationMessage("Stop Video");
@@ -169,6 +166,10 @@ void MainWindow::UpdatePlain()
 }
 void MainWindow::UpdatePlainText(QString message)
 {
+	//Alarm
+	QString soundPath = m_path + "/sound/message.wav";
+	QSound::play(soundPath);
+
 	ui->plainTextEdit->appendPlainText(message);
 }
 
@@ -253,7 +254,7 @@ void MainWindow::ClearFrameLabel()
 }
 void MainWindow::UpdateList(QString listOfClients)
 {
-	ui->listWidget->clear();
+	ui->clientsList->clear();
 
 	std::string buf;
 	std::stringstream ss(listOfClients.toStdString());
@@ -269,15 +270,43 @@ void MainWindow::UpdateList(QString listOfClients)
 	{
 		if (!stringItem.empty())
 		{
-			QListWidgetItem *newItem = new QListWidgetItem();
-			newItem->setText(QString::fromStdString(stringItem));
+			if (stringItem.compare(m_name.toStdString()) != 0)
+			{
+				QListWidgetItem *newItem = new QListWidgetItem();
+				newItem->setText(QString::fromStdString(stringItem));
 
-			int row = ui->listWidget->row(ui->listWidget->currentItem());
-			ui->listWidget->insertItem(row, newItem);
+				int row = ui->clientsList->row(ui->clientsList->currentItem());
+				ui->clientsList->insertItem(row, newItem);
+			}
 		}
-
 	}
 
+	if (ui->clientsList->count() == 1)
+	{
+		ui->clientsList->item(0)->setBackgroundColor(Qt::green);
+	}
+
+	return;
+}
+void MainWindow::ListItemClicked()
+{
+
+	static QListWidgetItem *previousItem = new QListWidgetItem();
+	previousItem->setBackgroundColor(Qt::white);
+	
+	QListWidgetItem *newItem = new QListWidgetItem();
+	newItem = ui->clientsList->currentItem();
+
+	QString name = newItem->text();
+
+	newItem->setBackgroundColor(Qt::green);
+
+	previousItem = newItem;
+
+	//Get History
+	GetHistoryWithClient(name.toStdString());
+
+	//QMessageBox::information()
 }
 bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 {
@@ -342,7 +371,6 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 	if (status)
 	{
 		iconPath = m_path + "/images/crossed_microphone.png";
-
 	}
 	else
 	{
@@ -353,4 +381,21 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 
 	ui->audioButton->setIcon(icon);
 	return;
+}
+
+void MainWindow::GetHistoryWithClient(std::string clientName)
+{
+	m_client->SendInformationMessage("Save History");
+
+	m_client->SendMessageWithoutName(clientName);
+
+	//send ten messages(buffer)
+	m_client->SendMessage("Igor");
+
+	ClearPlainText();
+}
+
+void MainWindow::ClearPlainText()
+{
+	ui->plainTextEdit->clear();
 }

@@ -29,6 +29,8 @@ private:
 	void SetStatusVideoRead(bool value);
 	bool GetStatusVideoRead();
 	void ChangeMicrophoneIcon(bool status);
+	void GetHistoryWithClient(std::string clientName);
+	void ClearPlainText();
 
 public:
     explicit MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client);
@@ -42,7 +44,7 @@ private:
 	QString m_port;
 	QString m_name;
 	ThreadMap threadMap;
-	NativeFrameLabel *m_nativeFrameLabel;
+	std::shared_ptr<NativeFrameLabel> m_nativeFrameLabel;
 
 	std::mutex m_videoMutex;
 	std::shared_ptr<AudioProcessor> m_audio;
@@ -65,6 +67,7 @@ private slots:
 	void ProcessAudioData(QByteArray data, int length);
 	void ClearFrameLabel();
 	void UpdateList(QString listOfClients);
+	void ListItemClicked();
 };
 
 #endif // MAINWINDOW_H

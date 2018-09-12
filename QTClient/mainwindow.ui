@@ -278,7 +278,7 @@ border-color: rgb(0, 0, 255);</string>
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QListWidget" name="listWidget">
+   <widget class="QListWidget" name="clientsList">
     <property name="geometry">
      <rect>
       <x>100</x>
@@ -293,6 +293,24 @@ border-color: rgb(0, 0, 255);</string>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1042</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuSettings"/>
+  </widget>
   <action name="actionLogin">
    <property name="text">
     <string>Login</string>

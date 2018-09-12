@@ -40,6 +40,8 @@ private:
 	void SendAllInformationMessage(std::string message);
 	void RecievePacket(SOCKET client,PacketType &packet);
 	void SendClientsList();
+
+	void SaveMessageHistoryOfClient(SOCKET client);
 public:
 	TCPServer(int port, const char *ip);
 

@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Login</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color: rgb(85, 85, 127);</string>
+  </property>
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
     <rect>
@@ -22,8 +25,11 @@
      <height>23</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(170, 170, 255);</string>
+   </property>
    <property name="text">
-    <string>Ok</string>
+    <string>Connect</string>
    </property>
   </widget>
   <widget class="QWidget" name="verticalLayoutWidget">
@@ -38,6 +44,9 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QLabel" name="label_2">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
       <property name="text">
        <string>Port</string>
       </property>
@@ -45,6 +54,9 @@
     </item>
     <item>
      <widget class="QLabel" name="label">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
       <property name="text">
        <string>IP</string>
       </property>
@@ -52,6 +64,9 @@
     </item>
     <item>
      <widget class="QLabel" name="label_3">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
       <property name="text">
        <string>Name</string>
       </property>
@@ -70,13 +85,25 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QLineEdit" name="portLineEdit"/>
+     <widget class="QLineEdit" name="portLineEdit">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="ipLineEdit"/>
+     <widget class="QLineEdit" name="ipLineEdit">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="nameLineEdit"/>
+     <widget class="QLineEdit" name="nameLineEdit">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(170, 170, 255);</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

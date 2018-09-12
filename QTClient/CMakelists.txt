@@ -21,6 +21,10 @@ set(file_settings
 set(image_files
 	${PROJECT_SOURCE_DIR}/images
 )
+
+set(music_files
+	${PROJECT_SOURCE_DIR}/sound
+)
  
 foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
 	file(COPY ${file_settings} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/settings)
@@ -35,11 +39,24 @@ function(copy_images dir)
 
 endfunction(copy_images)
 
+function(copy_music dir)
+	file(GLOB MUSIC "${dir}/*.wav")
+
+	foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
+		file(COPY ${MUSIC} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION}/sound)
+	endforeach()
+
+endfunction(copy_music)
+
 copy_images(${image_files})
+copy_music(${music_files})
+
+
 set(project_ui
 	mainwindow.ui
 	loginwindow.ui
 )
+
 set(SOURCES
 	main.cpp
 	mainwindow.cpp

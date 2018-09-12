@@ -85,6 +85,28 @@ bool DB::CheckIfClientWithSameNameExist(std::string name) const
 	return false;
 }
 
+int DB::GetClientIDByName(std::string name)
+{
+	m_query->prepare("SELETCT id FROM client WHERE name:=name;");
+
+	m_query->bindValue(":name", QString::fromStdString(name));
+
+	bool result = m_query->exec();
+
+	if (result)
+	{
+		if (m_query->next())
+		{
+			int id = m_query->value(0).toInt();
+			return id;
+		}
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 bool DB::InserClientInfo(const std::string name, int & insertedId) const
 {
 	bool checkIfExist = CheckIfClientWithSameNameExist(name);
@@ -183,6 +205,12 @@ void DB::ClearTableClient()
 
 	m_query->exec();
 }
+
+void DB::InsertClientHistory(int clientID, const std::string name, int &insertedId) const
+{
+
+}
+
 
 // void DB::SelectTable()
 // {

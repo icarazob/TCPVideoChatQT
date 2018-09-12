@@ -16,15 +16,23 @@ class DB {
 	};
 
 public:
+
 	static DB& GetInstance();
 	void OpenDataBase();
+
 	int GetLastInsertedId() const;
 	bool CheckIfClientWithSameNameExist(std::string name) const;
-	bool InserClientInfo(const std::string name, int &insertedId) const;
+	int GetClientIDByName(std::string name);
+
 	bool DeleteClient(std::string name);
 	void ShowAllClients();
 	std::vector<std::string> SelectNameOfAllClients();
 	void ClearTableClient();
+
+	//insert information
+	void InsertClientHistory(int clientID,const std::string name, int &insertedId) const;
+	bool InserClientInfo(const std::string name, int & insertedId) const;
+
 private:
 	DB();
 	~DB();
