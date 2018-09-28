@@ -14,7 +14,7 @@
    <string>Login</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(85, 85, 127);</string>
+   <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:1, stop:0.357955 rgba(255, 194, 0, 255), stop:1 rgba(255, 255, 255, 255));</string>
   </property>
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
@@ -110,9 +110,9 @@
   <widget class="QLabel" name="connectLabel">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>110</x>
      <y>20</y>
-     <width>171</width>
+     <width>181</width>
      <height>20</height>
     </rect>
    </property>

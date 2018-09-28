@@ -29,14 +29,14 @@ public:
 	QString GetClientName();
 	bool GetStatus();
 
-	std::shared_ptr<TCPClient> GetTCPClient();
+	std::unique_ptr<TCPClient> GetTCPClient();
 
 private:
     Ui::loginwindow *ui;
 	QString m_ip;
 	QString m_port;
 	QString m_name;
-	std::shared_ptr<TCPClient> m_client;
+	std::unique_ptr<TCPClient> m_client;
 	bool m_status = false;
 public slots:
 	void exit();

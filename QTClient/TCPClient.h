@@ -31,19 +31,19 @@ private:
 	void RecieveInformationMessage(std::string &message);
 	void ReceiveMessage(std::string &message);
 public:
-	TCPClient(int port, const char *ip,std::string name);
+	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
 	bool Connect();
 
 	void SendMessageWithoutName(std::string message);
 	void SendMessage(std::string message);
-	void SendFrame(cv::Mat frame);
+	void SendFrame(std::vector<uchar> buffer);
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
 
 	
 	cv::Mat GetCurrentFrame();
-	bool isSameName();
+	bool IsSameName();
 	
 signals:
 	void recieveEventMessage(QString message);

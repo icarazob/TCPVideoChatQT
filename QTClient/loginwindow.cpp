@@ -99,11 +99,8 @@ loginwindow::loginwindow(QDialog *parent) :
 	ui->nameLineEdit->setValidator(validator);
 
 
-
 	QTimer::singleShot(0, ui->nameLineEdit, SLOT(setFocus()));
 	QObject::connect(ui->okButton, SIGNAL(clicked()), SLOT(exit()));
-
-
 }
 
 QString loginwindow::GetClientIp()
@@ -125,9 +122,9 @@ bool loginwindow::GetStatus()
 	return m_status;
 }
 
-std::shared_ptr<TCPClient> loginwindow::GetTCPClient()
+std::unique_ptr<TCPClient> loginwindow::GetTCPClient()
 {
-	return m_client;
+	return std::move(m_client);
 }
 
 bool loginwindow::CheckOnValidInputData()
@@ -166,7 +163,7 @@ void loginwindow::exit()
 		m_client.reset();
 		m_client = nullptr;
 
-		m_client = std::make_shared<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(), m_name.toUtf8().constData());
+		m_client = std::make_unique<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(), m_name.toUtf8().constData());
 
 		if (m_client->Connect())
 		{
@@ -176,7 +173,7 @@ void loginwindow::exit()
 		else
 		{
 			m_status = false;
-			if (m_client->isSameName())
+			if (m_client->IsSameName())
 			{
 				ui->connectLabel->setText("Client with the same name exist!");
 				ui->connectLabel->setStyleSheet("color:red");

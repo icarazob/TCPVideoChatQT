@@ -12,7 +12,6 @@ private:
 	void InitializeAudio();
 	void CreateAudioInput();
 	void CreateAudioOutput();
-
 public:
 	explicit AudioProcessor();
 	void CloseInput();

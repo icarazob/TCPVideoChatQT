@@ -12,43 +12,28 @@
 #include <vector>
 #include <string>
 #include <QSound>
+#include <future>
 
-
-
-MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<TCPClient> client) :
+MainWindow::MainWindow(QString port, QString ip, QString name, std::unique_ptr<TCPClient> client) :
 	QMainWindow(0),
 	m_port(port),
 	m_ip(ip),
 	m_name(name),
-	ui(new Ui::MainWindow)
+	ui(new Ui::MainWindow),
+	m_client(std::move(client)),
+	m_audio(std::make_unique<AudioProcessor>()),
+	m_nativeFrameLabel(std::make_shared<NativeFrameLabel>(this)),
+	m_notification(std::make_unique<PopUpNotification>())
 {
 	ui->setupUi(this);
-	m_client = client;
-
-	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this);
-	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
-
-	m_audio = std::make_shared<AudioProcessor>();
 
 	ui->nameLabel->setText(name);
+	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
+
 	ui->plainTextForSend->installEventFilter(this);
 
 	//set icons
-	QIcon icon1,icon2,icon3;
-	QString appPath = QCoreApplication::applicationDirPath();
-	QString icon1ImagePath = appPath + "/images/Stop.png";
-	QString icon2ImagePath = appPath + "/images/Play.png";
-	QString icon3ImagePath = appPath + "/images/microphone.png";
-	m_path = appPath;
-
-	icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
-	icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
-	icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
-
-	ui->stopVideoButton->setIcon(icon1);
-	ui->videoButton->setIcon(icon2);
-	ui->audioButton->setIcon(icon3);
-
+	SetupIcons();
 
 	//connects
 	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SLOT(exit()));
@@ -65,7 +50,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::shared_ptr<T
 	QObject::connect(m_client.get(), SIGNAL(updateList(QString)), SLOT(UpdateList(QString)));
 	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()), this, SLOT(ListItemClicked()));
 
-
+	//Send information to server
 	m_client->SendInformationMessage("Setup");
 }
 
@@ -78,11 +63,16 @@ MainWindow::~MainWindow()
 }
 void MainWindow::ShowFrame()
 {
+	static const int c_widthLabel = ui->label->width();
+	static const int c_heightLabel = ui->label->height();
+
 	cv::Mat copyFrame(m_client->GetCurrentFrame());
 	if (!copyFrame.empty())
 	{
-		cv::cvtColor(copyFrame, copyFrame, CV_BGR2RGB);
-		ui->label->setPixmap(QPixmap::fromImage(QImage(copyFrame.data, copyFrame.cols, copyFrame.rows, copyFrame.step, QImage::Format_RGB888)));
+		cv::Mat result;
+		cv::resize(copyFrame, result, cv::Size(c_widthLabel, c_heightLabel));
+		cv::cvtColor(result, result, CV_BGR2RGB);
+		ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
 	}
 	else
 	{
@@ -125,7 +115,13 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 				}
 
 				cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
-				m_client->SendFrame(frame);
+
+				//Compress to .png extension
+				std::vector<uchar> data;
+				CompressFrame(frame,data);
+
+				//Send data over TCP
+				m_client->SendFrame(data);
 
 				cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
 				cv::cvtColor(frame, frame, CV_BGR2RGB);
@@ -141,7 +137,6 @@ std::function<void(void)> MainWindow::GetVideoHandler()
 
 		m_capture.release();
 		m_nativeFrameLabel->Clear();
-
 		m_client->SendInformationMessage("Stop Video");
 		return;
 	};
@@ -167,9 +162,27 @@ void MainWindow::UpdatePlain()
 void MainWindow::UpdatePlainText(QString message)
 {
 	//Alarm
-	QString soundPath = m_path + "/sound/message.wav";
-	QSound::play(soundPath);
+	PlaySound(m_path + "/sound/message.wav");
 
+	//Show notification
+	std::string nameOfClient, messageOfClient;
+	std::string stdMessage = message.toStdString();
+	auto pos = stdMessage.find_first_of(":");
+
+	if (pos != std::string::npos)
+	{
+		nameOfClient = stdMessage.substr(0, pos);;
+		messageOfClient = stdMessage.substr(pos + 1);
+	}
+	else
+	{
+		nameOfClient = "Server";
+		messageOfClient = stdMessage;
+	}
+
+	m_notification->Show(QString::fromStdString(nameOfClient), QString::fromStdString(messageOfClient));
+
+	//Add message
 	ui->plainTextEdit->appendPlainText(message);
 }
 
@@ -398,4 +411,37 @@ void MainWindow::GetHistoryWithClient(std::string clientName)
 void MainWindow::ClearPlainText()
 {
 	ui->plainTextEdit->clear();
+}
+
+void MainWindow::CompressFrame(cv::Mat & frame, std::vector<uchar>& buffer)
+{
+	cv::Mat resized;
+	frame.copyTo(resized);
+
+	cv::imencode(".png", resized, buffer);
+
+	return;
+}
+
+void MainWindow::SetupIcons()
+{
+	QIcon icon1, icon2, icon3;
+	QString appPath = QCoreApplication::applicationDirPath();
+	QString icon1ImagePath = appPath + "/images/Stop.png";
+	QString icon2ImagePath = appPath + "/images/Play.png";
+	QString icon3ImagePath = appPath + "/images/microphone.png";
+	m_path = appPath;
+
+	icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+
+	ui->stopVideoButton->setIcon(icon1);
+	ui->videoButton->setIcon(icon2);
+	ui->audioButton->setIcon(icon3);
+}
+
+void MainWindow::PlaySound(QString path)
+{
+	QSound::play(path);
 }

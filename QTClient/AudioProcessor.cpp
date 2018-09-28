@@ -109,7 +109,6 @@ void AudioProcessor::ProcessData(QByteArray buffer, int length)
 			m_output->write(buffer.data(), length);
 		}
 	}
-
 }
 
 AudioProcessor::~AudioProcessor()

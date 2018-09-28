@@ -7,9 +7,9 @@ DB::DB():
 	m_db(std::make_unique<QSqlDatabase>(QSqlDatabase::addDatabase("QSQLITE"))),
 	m_query(nullptr)
 {
+	m_path = QCoreApplication::applicationDirPath();
 	OpenDataBase();
 	ClearTableClient();
-	m_path = QCoreApplication::applicationDirPath();
 }
 
 DB::~DB()
