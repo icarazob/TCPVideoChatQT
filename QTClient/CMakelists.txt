@@ -55,6 +55,7 @@ copy_music(${music_files})
 set(project_ui
 	mainwindow.ui
 	loginwindow.ui
+	PopUpNotification.ui
 )
 
 set(SOURCES
@@ -64,6 +65,7 @@ set(SOURCES
 	loginwindow.cpp
 	NativeFrameLabel.cpp
 	AudioProcessor.cpp
+	PopUpNotification.cpp
 )
 
 set(HEADERS
@@ -72,6 +74,7 @@ set(HEADERS
 	loginwindow.h
 	NativeFrameLabel.h
 	AudioProcessor.h
+	PopUpNotification.h
 )
 
 qt5_wrap_ui(project_headers_wrapped ${project_ui})
@@ -82,9 +85,9 @@ include_directories( ${OpenCV_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME}  ${HEADERS} ${SOURCES} ${project_sources_moc}
 	${project_headers_wrapped})
 	
-set_target_properties(${PROJECT_NAME} PROPERTIES
-			WIN32_EXECUTABLE YES
-)	
+#set_target_properties(${PROJECT_NAME} PROPERTIES
+#			WIN32_EXECUTABLE YES
+#)	
 
 target_link_libraries(${PROJECT_NAME}
 		PUBLIC

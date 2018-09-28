@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1042</width>
-    <height>750</height>
+    <width>1064</width>
+    <height>774</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1064</width>
+    <height>774</height>
+   </size>
   </property>
   <property name="font">
    <font>
@@ -37,7 +43,7 @@
    <widget class="QPushButton" name="buttonExit">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>50</x>
       <y>700</y>
       <width>81</width>
       <height>31</height>
@@ -168,7 +174,7 @@ border-color: rgb(0, 0, 255);</string>
     <property name="geometry">
      <rect>
       <x>580</x>
-      <y>360</y>
+      <y>350</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -204,7 +210,7 @@ border-color: rgb(0, 0, 255);</string>
     <property name="geometry">
      <rect>
       <x>680</x>
-      <y>360</y>
+      <y>350</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -230,7 +236,7 @@ border-color: rgb(0, 0, 255);</string>
    <widget class="QLabel" name="nameLabel">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>30</x>
       <y>40</y>
       <width>131</width>
       <height>31</height>
@@ -256,7 +262,7 @@ border-color: rgb(0, 0, 255);</string>
     <property name="geometry">
      <rect>
       <x>630</x>
-      <y>360</y>
+      <y>350</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -298,7 +304,7 @@ border-color: rgb(0, 0, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1042</width>
+     <width>1064</width>
      <height>21</height>
     </rect>
    </property>

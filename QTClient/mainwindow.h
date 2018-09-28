@@ -6,6 +6,7 @@
 #include "loginwindow.h"
 #include "NativeFrameLabel.h"
 #include "AudioProcessor.h"
+#include "PopUpNotification.h"
 #include <functional>
 #include <memory>
 #include <thread>
@@ -32,13 +33,17 @@ private:
 	void GetHistoryWithClient(std::string clientName);
 	void ClearPlainText();
 
+	void CompressFrame(cv::Mat& frame, std::vector<uchar>& buffer);
+	void SetupIcons();
+	void PlaySound(QString path);
 public:
-    explicit MainWindow(QString port, QString ip, QString name,std::shared_ptr<TCPClient> client);
+    explicit MainWindow(QString port, QString ip, QString name,std::unique_ptr<TCPClient> client);
     ~MainWindow();
 
 private:
     Ui::MainWindow *ui;
-	std::shared_ptr<TCPClient> m_client;
+	std::unique_ptr<TCPClient> m_client;
+	std::unique_ptr<PopUpNotification> m_notification;
 	cv::VideoCapture m_capture;
 	QString m_ip;
 	QString m_port;
@@ -47,7 +52,7 @@ private:
 	std::shared_ptr<NativeFrameLabel> m_nativeFrameLabel;
 
 	std::mutex m_videoMutex;
-	std::shared_ptr<AudioProcessor> m_audio;
+	std::unique_ptr<AudioProcessor> m_audio;
 	QString m_path;
 	
 	bool m_shouldRead = false;

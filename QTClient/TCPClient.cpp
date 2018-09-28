@@ -325,7 +325,7 @@ void TCPClient::SendMessage(std::string message)
 	}
 }
 
-void TCPClient::SendFrame(cv::Mat frame)
+void TCPClient::SendFrame(std::vector<uchar> buffer)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -338,11 +338,10 @@ void TCPClient::SendFrame(cv::Mat frame)
 		qDebug() << "SendFrame: error send packet";
 		return;
 	}
-	frame = (frame.reshape(0, 1));
-	int imgSize = frame.total() * frame.elemSize();
+	int bufferSize = buffer.size();
 
 	//send int
-	int resultInt = send(m_connection, (char*)&imgSize, sizeof(int), NULL);
+	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
 
 	if (resultInt == SOCKET_ERROR)
 	{
@@ -350,7 +349,7 @@ void TCPClient::SendFrame(cv::Mat frame)
 		return;
 	}
 	//send frame
-	int resultFrame = send(m_connection,(char*)(frame.data), imgSize, NULL);
+	int resultFrame = send(m_connection,(char*)buffer.data(), bufferSize, NULL);
 
 	if (resultInt == SOCKET_ERROR)
 	{
@@ -391,7 +390,7 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 		return;
 	}
 
-
+	return;
 }
 
 void TCPClient::SendInformationMessage(std::string message)
@@ -427,23 +426,20 @@ void TCPClient::SendInformationMessage(std::string message)
 	return;
 }
 
-
-
 cv::Mat TCPClient::GetCurrentFrame()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_currentFrame;
 }
 
-bool TCPClient::isSameName()
+bool TCPClient::IsSameName()
 {
 	return m_sameName;
 }
 
 void TCPClient::RecieveFrame()
 {
-	cv::Mat recieveFrame = cv::Mat::zeros(391, 751, CV_8UC3);
-	char* uptr = (char*)recieveFrame.data;
+	std::vector<uchar> buffer;
 
 	int frameSize;
 	int resultInt = recv(m_connection, (char*)&frameSize, sizeof(int), NULL);
@@ -454,7 +450,9 @@ void TCPClient::RecieveFrame()
 		return;
 	}
 
-	int resultFrame = recv(m_connection, uptr, frameSize, MSG_WAITALL);
+	buffer.resize(frameSize);
+
+	int resultFrame = recv(m_connection, (char*)buffer.data(), frameSize, MSG_WAITALL);
 
 	if (resultFrame == SOCKET_ERROR)
 	{
@@ -462,8 +460,14 @@ void TCPClient::RecieveFrame()
 		return;
 	}
 
-	m_currentFrame = recieveFrame.clone();
+	
+	
+	cv::Mat frame = cv::imdecode(buffer, 1);
+	m_currentFrame = frame.clone();
+
 	Q_EMIT recieveEventFrame();
+
+
 
 
 	return;
