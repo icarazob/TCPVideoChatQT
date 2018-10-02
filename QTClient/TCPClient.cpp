@@ -85,7 +85,6 @@ void TCPClient::CreateSocket()
 		std::cout << "Can't create a socket" << GetLastError() << std::endl;
 		exit(1);
 	}
-
 }
 
 TCPClient::TCPClient(int port, const char * ip,std::string name)
@@ -209,6 +208,10 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	{
 		Q_EMIT clearLabel();
 	}
+	else if (stringMessage.compare("Start Video") == 0)
+	{
+		Q_EMIT startVideo();
+	}
 	else if (stringMessage.compare("List") == 0)
 	{
 		PacketType packet;
@@ -227,6 +230,7 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 			Q_EMIT updateList(QString::fromStdString(listOfClients));
 		}
 	}
+
 	message = stringMessage;
 
 
@@ -459,16 +463,12 @@ void TCPClient::RecieveFrame()
 		qDebug() << "RecieveFrame: error  frame";
 		return;
 	}
-
 	
 	
 	cv::Mat frame = cv::imdecode(buffer, 1);
 	m_currentFrame = frame.clone();
 
 	Q_EMIT recieveEventFrame();
-
-
-
 
 	return;
 

@@ -22,16 +22,11 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::unique_ptr<T
 	ui(new Ui::MainWindow),
 	m_client(std::move(client)),
 	m_audio(std::make_unique<AudioProcessor>()),
-	m_nativeFrameLabel(std::make_shared<NativeFrameLabel>(this)),
 	m_notification(std::make_unique<PopUpNotification>())
 {
 	ui->setupUi(this);
 
-	ui->nameLabel->setText(name);
-	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
-
-	ui->plainTextForSend->installEventFilter(this);
-
+	SetupElements();
 	//set icons
 	SetupIcons();
 
@@ -49,6 +44,7 @@ MainWindow::MainWindow(QString port, QString ip, QString name, std::unique_ptr<T
 	QObject::connect(m_client.get(), SIGNAL(clearLabel()), this, SLOT(ClearFrameLabel()));
 	QObject::connect(m_client.get(), SIGNAL(updateList(QString)), SLOT(UpdateList(QString)));
 	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()), this, SLOT(ListItemClicked()));
+	QObject::connect(m_client.get(), SIGNAL(startVideo()),this, SLOT(ClientStartVideo()));
 
 	//Send information to server
 	m_client->SendInformationMessage("Setup");
@@ -80,6 +76,12 @@ void MainWindow::ShowFrame()
 	}
 
 	return;
+}
+
+void MainWindow::ClientStartVideo()
+{
+	ui->label->setVisible(true);
+	ui->plainTextEdit->setGeometry(280, 390, 761, 221);
 }
 
 std::function<void(void)> MainWindow::GetVideoHandler()
@@ -193,8 +195,12 @@ void MainWindow::exit()
 
 void MainWindow::StartVideoStream()
 {
+	m_client->SendInformationMessage("Start Video");
+
 	ui->videoButton->setEnabled(false);
 	ui->stopVideoButton->setEnabled(true);
+
+	ClientStartVideo();
 
 	std::string threadName("VideoThread");
 	std::thread videoThread(GetVideoHandler());
@@ -317,7 +323,7 @@ void MainWindow::ListItemClicked()
 	previousItem = newItem;
 
 	//Get History
-	GetHistoryWithClient(name.toStdString());
+	//GetHistoryWithClient(name.toStdString());
 
 	//QMessageBox::information()
 }
@@ -439,6 +445,18 @@ void MainWindow::SetupIcons()
 	ui->stopVideoButton->setIcon(icon1);
 	ui->videoButton->setIcon(icon2);
 	ui->audioButton->setIcon(icon3);
+}
+
+void MainWindow::SetupElements()
+{
+	ui->nameLabel->setText(m_name);
+
+	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this);
+	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
+
+	ui->plainTextForSend->installEventFilter(this);
+
+	ui->label->setVisible(false);
 }
 
 void MainWindow::PlaySound(QString path)

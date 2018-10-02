@@ -35,6 +35,7 @@ private:
 
 	void CompressFrame(cv::Mat& frame, std::vector<uchar>& buffer);
 	void SetupIcons();
+	void SetupElements();
 	void PlaySound(QString path);
 public:
     explicit MainWindow(QString port, QString ip, QString name,std::unique_ptr<TCPClient> client);
@@ -62,6 +63,7 @@ public slots:
 	void UpdatePlain();
 	void UpdatePlainText(QString message);
 	void ShowFrame();
+	void ClientStartVideo();
 signals:
 	void videoStream(bool);
 private slots:

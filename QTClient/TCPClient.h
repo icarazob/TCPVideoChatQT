@@ -51,6 +51,7 @@ signals:
 	void recieveEventAudio(QByteArray,int);
 	void clearLabel();
 	void updateList(QString);
+	void startVideo();
 private:
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;

@@ -267,6 +267,11 @@ namespace Server {
 			SendAllWithoutClientInformationMessage(client, "Stop Video");
 			return true;
 		}
+		else if (message.compare("Start Video") == 0)
+		{ 
+			SendAllWithoutClientInformationMessage(client, "Start Video");
+			return true;
+		}
 		else if (message.compare("Setup") == 0)
 		{
 			return true;
@@ -683,6 +688,7 @@ namespace Server {
 				client = m_clients[clientNumber];
 			}
 
+			//Create VideoThread
 
 			while (true)
 			{
@@ -697,7 +703,7 @@ namespace Server {
 					return;
 				}
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				std::this_thread::sleep_for(std::chrono::microseconds(50));
 			}
 		};
 	}
