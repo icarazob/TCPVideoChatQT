@@ -78,9 +78,9 @@ color:rgb(0,0,255)</string>
     <property name="geometry">
      <rect>
       <x>280</x>
-      <y>390</y>
+      <y>40</y>
       <width>761</width>
-      <height>221</height>
+      <height>571</height>
      </rect>
     </property>
     <property name="font">
@@ -156,7 +156,7 @@ border-color: rgb(0, 0, 255);</string>
      <rect>
       <x>280</x>
       <y>0</y>
-      <width>751</width>
+      <width>761</width>
       <height>391</height>
      </rect>
     </property>
@@ -173,8 +173,8 @@ border-color: rgb(0, 0, 255);</string>
    <widget class="QPushButton" name="videoButton">
     <property name="geometry">
      <rect>
-      <x>580</x>
-      <y>350</y>
+      <x>910</x>
+      <y>0</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -209,8 +209,8 @@ border-color: rgb(0, 0, 255);</string>
     </property>
     <property name="geometry">
      <rect>
-      <x>680</x>
-      <y>350</y>
+      <x>990</x>
+      <y>0</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -261,8 +261,8 @@ border-color: rgb(0, 0, 255);</string>
    <widget class="QPushButton" name="audioButton">
     <property name="geometry">
      <rect>
-      <x>630</x>
-      <y>350</y>
+      <x>950</x>
+      <y>0</y>
       <width>41</width>
       <height>31</height>
      </rect>
