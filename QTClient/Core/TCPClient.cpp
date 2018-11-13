@@ -3,7 +3,7 @@
 #include <chrono>
 #include "InformationStrings.h"
 #include <QDebug>
-#include <opencv2/opencv.hpp>
+
 
 bool TCPClient::ProcessPacket(PacketType & packet)
 {
@@ -435,7 +435,7 @@ std::tuple<std::string, std::string, int> TCPClient::GetClientInformation() cons
 	return std::make_tuple(m_name, m_ip,m_port);
 }
 
-cv::Mat TCPClient::GetCurrentFrame()
+cv::Mat TCPClient::GetCurrentFrame() const
 {
 	return m_currentFrame;
 }

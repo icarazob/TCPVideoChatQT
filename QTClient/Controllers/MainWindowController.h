@@ -12,7 +12,6 @@ class TCPClient;
 class AudioProcessor;
 
 
-
 class MainWindowController: public QObject
 {
 	Q_OBJECT

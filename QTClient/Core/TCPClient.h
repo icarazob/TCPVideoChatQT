@@ -8,8 +8,7 @@
 #include <QString>
 #include <mutex>
 #include <tuple>
-
-
+#include <opencv2/opencv.hpp>
 
 class TCPClient: public QObject{
 	Q_OBJECT
@@ -43,7 +42,7 @@ public:
 
 	std::tuple<std::string, std::string, int> GetClientInformation() const;
 
-	cv::Mat GetCurrentFrame();
+	cv::Mat GetCurrentFrame() const;
 	bool IsSameName();
 	
 Q_SIGNALS:
