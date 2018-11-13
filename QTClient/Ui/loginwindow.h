@@ -4,13 +4,17 @@
 #include <QDialog>
 #include <QString>
 #include <memory>
-#include "TCPClient.h"
+#include <QMainWindow>
+
 
 namespace Ui {
 class loginwindow;
 }
 
-class loginwindow : public QDialog
+class TCPClient;
+class MainWindow;
+
+class LoginWindow : public QMainWindow
 {
     Q_OBJECT
 private:
@@ -20,8 +24,8 @@ private:
 	void ReadXmlSettings(QString path);
 	bool CheckOnValidInputData();
 public:
-    explicit loginwindow(QDialog *parent = 0);
-	~loginwindow();
+    explicit LoginWindow(QMainWindow *parent = 0);
+	~LoginWindow();
 
 
 	QString GetClientIp();
@@ -29,10 +33,13 @@ public:
 	QString GetClientName();
 	bool GetStatus();
 
+	MainWindow* GetMainWindow() const;
 	std::unique_ptr<TCPClient> GetTCPClient();
-
+Q_SIGNALS:
+	void ClientConnected();
 private:
     Ui::loginwindow *ui;
+	MainWindow *m_mainWindow;
 	QString m_ip;
 	QString m_port;
 	QString m_name;
@@ -40,6 +47,7 @@ private:
 	bool m_status = false;
 public slots:
 	void exit();
+
 };
 
 #endif // LOGINWINDOW_H

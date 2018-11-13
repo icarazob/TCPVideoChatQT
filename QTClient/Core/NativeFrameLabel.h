@@ -17,8 +17,11 @@ public:
 	void SetFrame(cv::Mat frame);
 	int GetWidth();
 	int GetHeight();
+	QSize GetSize() const;
+
 	void SetBoundaries(QPoint topLeftBorder,QPoint bottomRightBorder);
 	void Clear();
+	void SetVisibleLabel(bool visibility);
 public slots:
 	void ChangedCondition(bool value);
 private:

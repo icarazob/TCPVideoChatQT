@@ -6,8 +6,8 @@
 #include <functional>
 #include <QObject>
 #include <QString>
-#include <opencv2/opencv.hpp>
 #include <mutex>
+#include <tuple>
 
 
 
@@ -41,11 +41,12 @@ public:
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
 
-	
+	std::tuple<std::string, std::string, int> GetClientInformation() const;
+
 	cv::Mat GetCurrentFrame();
 	bool IsSameName();
 	
-signals:
+Q_SIGNALS:
 	void recieveEventMessage(QString message);
 	void recieveEventFrame();
 	void recieveEventAudio(QByteArray,int);
@@ -64,5 +65,4 @@ private:
 	std::condition_variable m_cv;
 	bool m_proceed = true;
 	bool m_sameName = false;
-	
 };

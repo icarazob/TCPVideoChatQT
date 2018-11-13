@@ -107,7 +107,7 @@ NativeFrameLabel::NativeFrameLabel(QWidget *parent) :
 	m_nativeLabel->setText(QStringLiteral(""));
 	m_nativeLabel->setAutoFillBackground(false);
 	m_nativeLabel->setWordWrap(false);
-
+	m_nativeLabel->setVisible(false);
 	m_nativeLabel->installEventFilter(this);
 
 
@@ -140,6 +140,11 @@ int NativeFrameLabel::GetHeight()
 	return m_height;
 }
 
+QSize NativeFrameLabel::GetSize() const
+{
+	return m_nativeLabel->size();
+}
+
 void NativeFrameLabel::SetBoundaries(QPoint topLeftBorder, QPoint bottomRightBorder)
 {
 	m_topLeftBorder = topLeftBorder;
@@ -149,6 +154,12 @@ void NativeFrameLabel::SetBoundaries(QPoint topLeftBorder, QPoint bottomRightBor
 void NativeFrameLabel::Clear()
 {
 	m_nativeLabel->clear();
+	m_nativeLabel->setVisible(false);
+}
+
+void NativeFrameLabel::SetVisibleLabel(bool visibility)
+{
+	m_nativeLabel->setVisible(visibility);
 }
 
 void NativeFrameLabel::ChangedCondition(bool value)

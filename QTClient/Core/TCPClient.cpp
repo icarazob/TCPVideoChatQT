@@ -1,9 +1,9 @@
 #include "TCPClient.h"
 #include <thread>
 #include <chrono>
-#include <QMessageBox>
+#include "InformationStrings.h"
 #include <QDebug>
-
+#include <opencv2/opencv.hpp>
 
 bool TCPClient::ProcessPacket(PacketType & packet)
 {
@@ -125,12 +125,12 @@ bool TCPClient::Connect()
 			std::string message;
 			RecieveInformationMessage(message);
 
-			if (message.compare("Client with the same name exist") == 0)
+			if (message.compare(InformationStrings::IsSameName().toStdString()) == 0)
 			{
 				m_sameName = true;
 				return false;
 			}
-			else if (message.compare("Connected") == 0)
+			else if (message.compare(InformationStrings::Connected().toStdString()) == 0)
 			{
 				m_sameName = false;
 				//Create thread
@@ -204,15 +204,15 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	std::string stringMessage = buffer;
 	delete[]buffer;
 
-	if (stringMessage.compare("Stop Video") == 0)
+	if (stringMessage.compare(InformationStrings::StopVideo().toStdString()) == 0)
 	{
 		Q_EMIT clearLabel();
 	}
-	else if (stringMessage.compare("Start Video") == 0)
+	else if (stringMessage.compare(InformationStrings::StartVideo().toStdString()) == 0)
 	{
 		Q_EMIT startVideo();
 	}
-	else if (stringMessage.compare("List") == 0)
+	else if (stringMessage.compare(InformationStrings::List().toStdString()) == 0)
 	{
 		PacketType packet;
 
@@ -275,7 +275,7 @@ void TCPClient::SendMessageWithoutName(std::string message)
 		qDebug() << "SendMessageWithoutName: error send packet";
 		return;
 	}
-	int messageSize = message.size();
+	int messageSize = (int)(message.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -310,7 +310,7 @@ void TCPClient::SendMessage(std::string message)
 
 	std::string tempName = m_name + ": ";
 	std::string mesageWithName = message.insert(0, tempName);
-	int messageSize = mesageWithName.size();
+	int messageSize = (int)(mesageWithName.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -342,7 +342,7 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 		qDebug() << "SendFrame: error send packet";
 		return;
 	}
-	int bufferSize = buffer.size();
+	int bufferSize = (int)(buffer.size());
 
 	//send int
 	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
@@ -409,7 +409,7 @@ void TCPClient::SendInformationMessage(std::string message)
 		return;
 	}
 
-	int messageSize = message.size();
+	int messageSize = (int)(message.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -430,9 +430,13 @@ void TCPClient::SendInformationMessage(std::string message)
 	return;
 }
 
+std::tuple<std::string, std::string, int> TCPClient::GetClientInformation() const
+{
+	return std::make_tuple(m_name, m_ip,m_port);
+}
+
 cv::Mat TCPClient::GetCurrentFrame()
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
 	return m_currentFrame;
 }
 

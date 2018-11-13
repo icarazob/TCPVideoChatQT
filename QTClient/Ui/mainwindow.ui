@@ -152,6 +152,9 @@ border-color: rgb(0, 0, 255);</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>280</x>

@@ -1,12 +1,15 @@
 #include "loginwindow.h"
+#include "mainwindow.h"
 #include "ui_loginwindow.h"
 #include <QFile>
 #include <QXmlStreamReader>
 #include <QCoreApplication>
 #include <QRegExpValidator>
 #include <QTimer>
+#include "Core/TCPClient.h"
 
-bool loginwindow::CheckIp()
+
+bool LoginWindow::CheckIp()
 {
 	if (m_ip.isEmpty())
 	{
@@ -18,7 +21,7 @@ bool loginwindow::CheckIp()
 	}
 }
 
-bool loginwindow::CheckPort()
+bool LoginWindow::CheckPort()
 {
 	bool ok;
 	int port = m_port.split(" ")[0].toInt(&ok);
@@ -33,7 +36,7 @@ bool loginwindow::CheckPort()
 	}
 }
 
-bool loginwindow::CheckName()
+bool LoginWindow::CheckName()
 {
 	if (m_name.isEmpty())
 	{
@@ -45,7 +48,7 @@ bool loginwindow::CheckName()
 	}
 }
 
-void loginwindow::ReadXmlSettings(QString path)
+void LoginWindow::ReadXmlSettings(QString path)
 {
 	QFile file(path);
 
@@ -82,9 +85,10 @@ void loginwindow::ReadXmlSettings(QString path)
 
 }
 
-loginwindow::loginwindow(QDialog *parent) :
-	QDialog(parent),
-    ui(new Ui::loginwindow)
+LoginWindow::LoginWindow(QMainWindow *parent) :
+	QMainWindow(parent),
+    ui(new Ui::loginwindow),
+	m_mainWindow(new MainWindow)
 {
     ui->setupUi(this);
 
@@ -103,31 +107,36 @@ loginwindow::loginwindow(QDialog *parent) :
 	QObject::connect(ui->okButton, SIGNAL(clicked()), SLOT(exit()));
 }
 
-QString loginwindow::GetClientIp()
+QString LoginWindow::GetClientIp()
 {
 	return m_ip;
 }
 
-QString loginwindow::GetClientPort()
+QString LoginWindow::GetClientPort()
 {
 	return m_port;
 }
-QString loginwindow::GetClientName()
+QString LoginWindow::GetClientName()
 {
 	return m_name;
 }
 
-bool loginwindow::GetStatus()
+bool LoginWindow::GetStatus()
 {
 	return m_status;
 }
 
-std::unique_ptr<TCPClient> loginwindow::GetTCPClient()
+MainWindow* LoginWindow::GetMainWindow() const
+{
+	return m_mainWindow;
+}
+
+std::unique_ptr<TCPClient> LoginWindow::GetTCPClient()
 {
 	return std::move(m_client);
 }
 
-bool loginwindow::CheckOnValidInputData()
+bool LoginWindow::CheckOnValidInputData()
 {
 	if (!CheckName())
 	{
@@ -146,12 +155,12 @@ bool loginwindow::CheckOnValidInputData()
 	return true;
 }
 
-loginwindow::~loginwindow()
+LoginWindow::~LoginWindow()
 {
     delete ui;
 }
 
-void loginwindow::exit()
+void LoginWindow::exit()
 {
 	m_ip = ui->ipLineEdit->text();
 	m_port = ui->portLineEdit->text();
@@ -168,6 +177,7 @@ void loginwindow::exit()
 		if (m_client->Connect())
 		{
 			m_status = true;
+			Q_EMIT ClientConnected();
 			this->close();
 		}
 		else

@@ -1,0 +1,38 @@
+set(UI_MODULE_NAME Ui)
+
+set(SOURCES 
+	loginwindow.cpp
+	mainwindow.cpp
+	PopUpNotification.cpp
+)
+
+set(HEADERS
+	loginwindow.h
+	mainwindow.h
+	PopUpNotification.h
+)
+
+set(UI_FILES
+	loginwindow.ui
+	mainwindow.ui
+	PopUpNotification.ui
+)
+
+qt5_wrap_ui(UI_FILES ${UI_FILES})
+
+add_library(
+	${UI_MODULE_NAME}
+	STATIC
+	${HEADERS}
+	${SOURCES}
+	${UI_FILES}
+)
+
+target_link_libraries(
+	${UI_MODULE_NAME}
+	Qt5::Widgets
+	Qt5::Multimedia
+	Qt5::Core
+	Qt5::Gui
+	${OpenCV_LIBS}
+)

@@ -18,8 +18,10 @@ public:
 	void StartInput();
 	void ProcessData(QByteArray buffer, int length);
 	~AudioProcessor();
-signals:
-	void audioDataPreapre(QByteArray, int lenght);
+
+Q_SIGNALS:
+	void audioDataPrepare(QByteArray, int lenght);
+
 private slots:
 	void readMore();
 private:
