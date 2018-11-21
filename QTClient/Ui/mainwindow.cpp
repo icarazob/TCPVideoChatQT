@@ -6,23 +6,23 @@
 #include <qpixmap.h>
 #include <qimage.h>
 #include <QLabel>
-#include <QMessageBox>
 #include <QKeyEvent>
 #include <sstream>
 #include <vector>
 #include <string>
 #include <QSound>
+#include <QFileInfo>
 #include <opencv2\opencv.hpp>
 
 MainWindow::MainWindow(QMainWindow *parent):
 	QMainWindow(parent),
 	ui(new Ui::MainWindow),
-	m_notification(std::make_unique<PopUpNotification>())
+	m_notification(std::make_unique<PopUpNotification>()),
+	m_stopShowVideo(true)
 {
 
 	ui->setupUi(this);
 	
-	QObject::connect(ui->buttonExit, SIGNAL(clicked()), SIGNAL(exit()));
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
@@ -30,6 +30,7 @@ MainWindow::MainWindow(QMainWindow *parent):
 	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()), this, SLOT(ListItemClicked()));
 
 	SetupElements();
+
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel.get(), SLOT(ChangedCondition(bool)));
 }
 
@@ -43,9 +44,9 @@ QSize MainWindow::GetNativeLabelSize() const
 	return m_nativeFrameLabel->GetSize();
 }
 
-void MainWindow::SetNameLabel(std::string name)
+void MainWindow::SetNameLabel(QString name)
 {
-	ui->nameLabel->setText(QString::fromStdString(name));
+	ui->nameLabel->setText(name);
 }
 
 void MainWindow::SetAppPath(QString path)
@@ -59,28 +60,30 @@ MainWindow::~MainWindow()
 {
 	delete ui;
 }
-void MainWindow::ShowFrame(cv::Mat copyFrame)
+void MainWindow::ShowFrame(const cv::Mat &copyFrame)
 {
-	static const int c_widthLabel = ui->label->width();
-	static const int c_heightLabel = ui->label->height();
+	if (!m_stopShowVideo)
+	{
+		cv::Mat result;
+		cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
+		cv::cvtColor(result, result, CV_BGR2RGB);
 
-	cv::Mat result;
-	cv::resize(copyFrame, result, cv::Size(c_widthLabel, c_heightLabel));
-	cv::cvtColor(result, result, CV_BGR2RGB);
-	ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
+		ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
+	}
 
 	return;
 }
 
-void MainWindow::ShowFrameOnNativeLabel(cv::Mat frame)
+void MainWindow::ShowFrameOnNativeLabel(const cv::Mat& frame)
 {
 	m_nativeFrameLabel->SetFrame(frame);
 }
 
-void MainWindow::ClientStartVideo()
+void MainWindow::StartShowVideo()
 {
+	m_stopShowVideo = false;
 	ui->label->setVisible(true);
-	ui->plainTextEdit->setGeometry(280, 390, 761, 221);
+	ui->plainTextEdit->setGeometry(280, 480, 761, 200);
 }
 
 void MainWindow::UpdatePlain()
@@ -92,9 +95,7 @@ void MainWindow::UpdatePlain()
 		//Send message
 		SendMessageSignal(lineText);
 
-		//Update plainEdit
-		QString you("You");
-		ui->plainTextEdit->appendPlainText(you + ": " + lineText);
+		ui->plainTextEdit->appendPlainText("You: " + lineText);
 
 		//clear plainTextForSend
 		ui->plainTextForSend->clear();
@@ -129,11 +130,10 @@ void MainWindow::UpdatePlainText(QString message)
 
 void MainWindow::StartVideoStream()
 {
-
 	ui->videoButton->setEnabled(false);
 	ui->stopVideoButton->setEnabled(true);
 
-	ClientStartVideo();
+	StartShowVideo();
 	
 	TurnVideoSignal(true);
 	
@@ -150,7 +150,7 @@ void MainWindow::StopVideoStream()
 	TurnVideoSignal(false);
 
 	Q_EMIT videoStream(false);
-	ClearFrameLabel();
+
 	m_nativeFrameLabel->Clear();
 
 	return;
@@ -173,9 +173,14 @@ void MainWindow::TurnAudio()
 }
 
 
-void MainWindow::ClearFrameLabel()
+void MainWindow::StopShowVideo()
 {
+	m_stopShowVideo = true;
 	ui->label->clear();
+}
+void MainWindow::ClearNativeFrameLabel()
+{
+	m_nativeFrameLabel->Clear();
 }
 void MainWindow::UpdateList(QString listOfClients)
 {
@@ -290,7 +295,10 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 		iconPath = m_path + "/images/microphone.png";
 	}
 
-	icon.addFile(iconPath, QSize(), QIcon::Selected, QIcon::On);
+	if (FileExist(iconPath))
+	{
+		icon.addFile(iconPath, QSize(), QIcon::Selected, QIcon::On);
+	}
 
 	ui->audioButton->setIcon(icon);
 	return;
@@ -323,10 +331,21 @@ void MainWindow::SetupIcons()
 	QString icon2ImagePath = m_path + "/images/Play.png";
 	QString icon3ImagePath = m_path + "/images/microphone.png";
 
+	if (FileExist(icon1ImagePath))
+	{
+		icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	}
 
-	icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
-	icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
-	icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	if (FileExist(icon2ImagePath))
+	{
+		icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	}
+
+	if (FileExist(icon3ImagePath))
+	{
+		icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+	}
+
 
 	ui->stopVideoButton->setIcon(icon1);
 	ui->videoButton->setIcon(icon2);
@@ -335,8 +354,7 @@ void MainWindow::SetupIcons()
 
 void MainWindow::SetupElements()
 {
-
-	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this);
+	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this, ui->label->geometry().bottomRight());
 	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
 
 	ui->plainTextForSend->installEventFilter(this);
@@ -347,4 +365,18 @@ void MainWindow::SetupElements()
 void MainWindow::PlayNotificationSound(QString path)
 {
 	QSound::play(path);
+}
+
+bool MainWindow::FileExist(QString path)
+{
+	QFileInfo checkFile(path);
+
+	if (checkFile.exists() && checkFile.isFile())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }

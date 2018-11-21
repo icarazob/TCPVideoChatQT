@@ -1,6 +1,6 @@
 #pragma  once
-#include <iostream>
 #pragma comment(lib,"ws2_32.lib")
+#include <iostream>
 #include <WinSock2.h>
 #include <string>
 #include <functional>
@@ -9,17 +9,22 @@
 #include <mutex>
 #include <tuple>
 #include <opencv2/opencv.hpp>
+#include <condition_variable>
+
+
+class FaceDetector;
 
 class TCPClient: public QObject{
 	Q_OBJECT
 public:
-	enum PacketType {
+	enum class PacketType {
 		P_ChatMessage,
 		P_FrameMessage,
 		P_AudioMessage,
 		P_InformationMessage
 	};
 private:
+
 	bool ProcessPacket(PacketType &packet);
 	void InitializeWSA();
 	std::function<void (void)> CreateProcessHandler();
@@ -29,6 +34,9 @@ private:
 	void RecieveMessage();
 	void RecieveInformationMessage(std::string &message);
 	void ReceiveMessage(std::string &message);
+	void CreateFaceDetector(QString path);
+	void ProcessFrameThread();
+
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
@@ -40,28 +48,42 @@ public:
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
 
-	std::tuple<std::string, std::string, int> GetClientInformation() const;
 
+	std::tuple<std::string, std::string, int> GetClientInformation() const;
 	cv::Mat GetCurrentFrame() const;
+
+	void SetAppPath(QString path);
+	void StopThread();
 	bool IsSameName();
 	
 Q_SIGNALS:
 	void recieveEventMessage(QString message);
 	void recieveEventFrame();
 	void recieveEventAudio(QByteArray,int);
-	void clearLabel();
+
+	void startShowVideo();
+	void stopShowVideo();
+
 	void updateList(QString);
-	void startVideo();
 private:
+	QString m_path;
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
 	SOCKET m_connection;
+
 	int m_port;
+	cv::Mat m_currentFrame;
 	std::string m_name;
 	std::string m_ip;
+
+	std::thread m_frameThread;
 	std::mutex m_mutex;
-	cv::Mat m_currentFrame;
+	std::mutex m_frameMutex;
 	std::condition_variable m_cv;
-	bool m_proceed = true;
+
+	bool m_frameReady = true;
 	bool m_sameName = false;
+	bool m_terminating;
+
+	std::unique_ptr<FaceDetector> m_faceDetector;
 };

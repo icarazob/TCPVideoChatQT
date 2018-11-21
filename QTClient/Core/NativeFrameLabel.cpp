@@ -1,6 +1,5 @@
 #include "NativeFrameLabel.h"
 #include <QEvent>
-#include <QMessageBox>
 
 bool NativeFrameLabel::eventFilter(QObject * watched, QEvent * event)
 {
@@ -97,13 +96,13 @@ bool NativeFrameLabel::eventFilter(QObject * watched, QEvent * event)
 
 }
 
-NativeFrameLabel::NativeFrameLabel(QWidget *parent) :
+NativeFrameLabel::NativeFrameLabel(QWidget *parent,QPoint point) :
 	QWidget(parent)
 {
 	m_nativeLabel = new QLabel(parent);
 
 	m_nativeLabel->setObjectName(QStringLiteral("nativeLabel"));
-	m_nativeLabel->setGeometry(QRect(730, 270, 131, 131));
+	m_nativeLabel->setGeometry(QRect(point.x() - 131, point.y()-131, 131, 131));
 	m_nativeLabel->setText(QStringLiteral(""));
 	m_nativeLabel->setAutoFillBackground(false);
 	m_nativeLabel->setWordWrap(false);
@@ -124,7 +123,7 @@ NativeFrameLabel::~NativeFrameLabel()
 	this->close();
 }
 
-void NativeFrameLabel::SetFrame(cv::Mat frame)
+void NativeFrameLabel::SetFrame(const cv::Mat& frame)
 {
 	m_nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
 	return;
@@ -164,7 +163,5 @@ void NativeFrameLabel::SetVisibleLabel(bool visibility)
 
 void NativeFrameLabel::ChangedCondition(bool value)
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
-
 	m_isStream = value;
 }

@@ -3,7 +3,7 @@
 #include "Core/AudioProcessor.h"
 #include "Core/InformationStrings.h"
 #include "UI/mainwindow.h"
-
+#include <opencv2/highgui/highgui.hpp>
 
 
 
@@ -11,9 +11,10 @@ MainWindowController::MainWindowController(QString path):
 	m_view(nullptr),
 	m_tcpClient(nullptr),
 	m_appPath(path),
-	m_audioProcesscor(std::make_unique<AudioProcessor>())
+	m_audioProcesscor(std::make_unique<AudioProcessor>()),
+	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi"))
 {
-	m_videoCapture = std::make_unique<cv::VideoCapture>();
+
 }
 
 void MainWindowController::SetView(MainWindow * view)
@@ -22,24 +23,25 @@ void MainWindowController::SetView(MainWindow * view)
 	Q_ASSERT(m_tcpClient);
 
 	m_view = view;
+
 	m_view->SetAppPath(m_appPath);
+	m_tcpClient->SetAppPath(m_appPath);
 
 	SetClientInformation(m_tcpClient->GetClientInformation());
 	
-	QObject::connect(m_tcpClient.get(), SIGNAL(clearLabel()), this, SLOT(ViewClearFrameLabel()));
+	QObject::connect(m_tcpClient.get(), SIGNAL(stopShowVideo()), this, SLOT(ViewStopShowVideo()));
+	QObject::connect(m_tcpClient.get(), SIGNAL(startShowVideo()), this, SLOT(ViewStartShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(ViewUpdatePlainText(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray, int)), SLOT(ProcessAudioData(QByteArray, int)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(updateList(QString)), SLOT(ViewUpdateList(QString)));
-	QObject::connect(m_tcpClient.get(), SIGNAL(startVideo()), this, SLOT(ViewClientStartVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
 	QObject::connect(m_audioProcesscor.get(), SIGNAL(audioDataPrepare(QByteArray, int)), SLOT(SendAudioSlot(QByteArray, int)));
-
 
 	QObject::connect(m_view, &MainWindow::SendMessageSignal, this, &MainWindowController::SendMessageSlot);
 	QObject::connect(m_view, &MainWindow::TurnAudioSignal, this, &MainWindowController::TurnAudioSlot);
 	QObject::connect(m_view, &MainWindow::SendInformationSignal, this, &MainWindowController::SendInformationSlot);
 	QObject::connect(m_view, &MainWindow::TurnVideoSignal, this, &MainWindowController::TurnVideoSlot);
-	 
+
 	SendInformationSlot(InformationStrings::Setup());
 }
 
@@ -50,11 +52,16 @@ void MainWindowController::SetTCPClient(std::unique_ptr<TCPClient> client)
 
 MainWindowController::~MainWindowController()
 {
-	TurnVideoSlot(false);
-	m_audioProcesscor->CloseInput();
+	if (m_tcpClient != nullptr)
+	{
+		m_tcpClient->StopThread();
+		TurnVideoSlot(false);
+		m_audioProcesscor->CloseInput();
+		SendInformationSlot(InformationStrings::StopVideo());
 
-	SendInformationSlot(InformationStrings::StopVideo());
-	SendMessageSlot(QString::fromStdString(m_clientInformation.name) + " is disconnected!");
+		//To do
+		m_tcpClient->SendMessageWithoutName(m_clientInformation.name + " is disconnected!");
+	}
 }
 
 void MainWindowController::ViewUpdatePlainText(QString message)
@@ -82,9 +89,9 @@ void MainWindowController::SendAudioSlot(QByteArray buffer, int length)
 	m_tcpClient->SendAudio(buffer, length);
 }
 
-void MainWindowController::ViewClientStartVideo()
+void MainWindowController::ViewStartShowVideo()
 {
-	m_view->ClientStartVideo();
+	m_view->StartShowVideo();
 }
 
 void MainWindowController::TurnAudioSlot(bool state)
@@ -142,7 +149,7 @@ void MainWindowController::ViewShowFrame()
 	}
 	else
 	{
-		m_view->ClearFrameLabel();
+		m_view->StopShowVideo();
 	}
 
 	return;
@@ -158,9 +165,9 @@ void MainWindowController::SendInformationSlot(QString message)
 	m_tcpClient->SendInformationMessage(message.toUtf8().constData());
 }
 
-void MainWindowController::ViewClearFrameLabel()
+void MainWindowController::ViewStopShowVideo()
 {
-	m_view->ClearFrameLabel();
+	m_view->StopShowVideo();
 }
 
 std::function<void(void)> MainWindowController::GetVideoHandler()
@@ -175,11 +182,10 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 			const int c_widthNativeLabel = nativeLabelSize.width();
 			const int c_heightNativeLabel = nativeLabelSize.height();
 
-			m_videoCapture->open(0);
+			m_videoCapture->open(m_appPath.toStdString() + "/Face.avi");
 
 			if (!m_videoCapture->isOpened())
 			{
-				m_view->ClearFrameLabel();
 				return;
 			}
 			cv::Mat frame;
@@ -195,29 +201,30 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 						break;
 					}
 
-					cv::resize(frame, frame, cv::Size(c_widthLabel, c_heightLabel));
+					cv::Mat resizedFrame;
+					cv::resize(frame, resizedFrame, cv::Size(c_widthLabel, c_heightLabel));
 
 					//Compress to .png extension
 					std::vector<uchar> data;
-					CompressFrame(frame, data);
+					CompressFrame(resizedFrame, data);
+					SendFrameSlot(data);
 
 					//Show on view
 					cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
 					cv::cvtColor(frame, frame, CV_BGR2RGB);
 					m_view->ShowFrameOnNativeLabel(frame);
 
-					SendFrameSlot(data);
-
-					cv::waitKey(25);
+					std::this_thread::sleep_for(std::chrono::milliseconds(25));
 				}
 				else
 				{
 					break;
 				}
 			}
-			m_videoCapture->release();
 
-			m_view->ClearFrameLabel();
+			m_videoCapture->release();
+			m_view->ClearNativeFrameLabel();
+
 			SendInformationSlot(InformationStrings::StopVideo());
 
 			return;
@@ -226,19 +233,16 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 
 void MainWindowController::CompressFrame(const cv::Mat & frame, std::vector<uchar>& buffer)
 {
-	cv::Mat resized;
-	frame.copyTo(resized);
-
-	cv::imencode(".png", resized, buffer);
-	return;
+	cv::imencode(".png", frame, buffer);
 }
 
 void MainWindowController::SetClientInformation(std::tuple<std::string, std::string, int> information)
 {
+
 	m_clientInformation.name = std::get<0>(information);
 	m_clientInformation.ip = std::get<1>(information);
 	m_clientInformation.port = std::get<2>(information);
 
-	m_view->SetNameLabel(m_clientInformation.name);
+	m_view->SetNameLabel(QString::fromStdString(m_clientInformation.name));
 
 }

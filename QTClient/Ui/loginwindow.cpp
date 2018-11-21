@@ -1,13 +1,12 @@
 #include "loginwindow.h"
 #include "mainwindow.h"
 #include "ui_loginwindow.h"
+#include "Core/TCPClient.h"
 #include <QFile>
 #include <QXmlStreamReader>
 #include <QCoreApplication>
 #include <QRegExpValidator>
 #include <QTimer>
-#include "Core/TCPClient.h"
-
 
 bool LoginWindow::CheckIp()
 {
@@ -98,7 +97,7 @@ LoginWindow::LoginWindow(QMainWindow *parent) :
 	ReadXmlSettings(xmlPath);
 
 
-	QRegExp exp("([a-z]|[1-9]|[A-Z]){1,15}");
+	QRegExp exp("([à-ÿ]|[a-z]|[1-9]|[A-Z]|[À-ß]){1,15}");
 	QRegExpValidator *validator = new QRegExpValidator(exp, this);
 	ui->nameLineEdit->setValidator(validator);
 

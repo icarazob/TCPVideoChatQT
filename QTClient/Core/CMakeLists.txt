@@ -5,12 +5,18 @@ set(HEADERS
     NativeFrameLabel.h
     TCPClient.h
     InformationStrings.h
+    FaceDetector.h
 )
 
 set(SOURCES
     AudioProcessor.cpp
     NativeFrameLabel.cpp
     TCPClient.cpp
+    FaceDetector.cpp
+)
+
+include_directories(
+	${DLIB_DIRS}
 )
 
 add_library(
@@ -26,5 +32,6 @@ target_link_libraries(
     Qt5::Gui
     Qt5::Widgets
     Qt5::Multimedia
-	${OpenCV_LIBS}
+    ${OpenCV_LIBS}
+	${DLIB_LIBS}/dlib.lib
 )

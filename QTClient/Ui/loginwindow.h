@@ -1,10 +1,10 @@
 #ifndef LOGINWINDOW_H
 #define LOGINWINDOW_H
-
+#include <QMainWindow>
 #include <QDialog>
 #include <QString>
 #include <memory>
-#include <QMainWindow>
+
 
 
 namespace Ui {
@@ -43,8 +43,11 @@ private:
 	QString m_ip;
 	QString m_port;
 	QString m_name;
-	std::unique_ptr<TCPClient> m_client;
 	bool m_status = false;
+
+
+	std::unique_ptr<TCPClient> m_client;
+
 public slots:
 	void exit();
 

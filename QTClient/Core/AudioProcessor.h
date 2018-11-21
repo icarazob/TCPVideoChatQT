@@ -1,10 +1,8 @@
 #pragma once
 #include <QObject>
-#include <QWidget>
 #include <QIODevice>
 #include <QAudioOutput>
 #include <QAudioInput>
-#include <mutex>
 
 class AudioProcessor: public QObject{
 	Q_OBJECT	
@@ -34,5 +32,4 @@ private:
 	QIODevice *m_input;
 	QIODevice *m_output;
 	QByteArray m_buffer;
-	std::mutex m_mutex;
 };

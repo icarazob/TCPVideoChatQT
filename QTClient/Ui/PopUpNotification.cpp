@@ -2,7 +2,6 @@
 #include "ui_PopUpNotification.h"
 #include <QApplication>
 #include <QDesktopWidget>
-#include <QTimer>
 
 void PopUpNotification::SetGeometry()
 {

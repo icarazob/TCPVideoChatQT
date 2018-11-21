@@ -2,7 +2,6 @@
 #include <QAudioFormat>
 #include <algorithm>
 #include <iostream>
-#include <QDebug>
 #include <QBuffer>
 #include <QEventLoop>
 

@@ -22,5 +22,5 @@ target_link_libraries(
     Qt5::Gui
     Qt5::Widgets
 	Qt5::Multimedia
-	${OpenCV_LIBS}
+	    ${OpenCV_LIBS}
 )

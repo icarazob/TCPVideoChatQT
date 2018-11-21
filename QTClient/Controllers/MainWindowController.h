@@ -1,18 +1,19 @@
+#pragma once
 #include <QObject>
-#include <opencv2/opencv.hpp>
 #include <memory>
 #include <thread>
 #include <unordered_map>
 #include <future>
 #include <functional>
 #include <tuple>
+#include <opencv2/opencv.hpp>
 
 class MainWindow;
 class TCPClient;
 class AudioProcessor;
 
 
-class MainWindowController: public QObject
+class  MainWindowController: public QObject
 {
 	Q_OBJECT
 private:
@@ -39,11 +40,11 @@ public:
 	~MainWindowController();
 
 private slots:
-	void ViewClearFrameLabel();
+	void ViewStopShowVideo();
 	void ViewUpdatePlainText(QString message);
 	void ViewUpdateList(QString listOfClients);
 	void ViewShowFrame();
-	void ViewClientStartVideo();
+	void ViewStartShowVideo();
 
 	void ProcessAudioData(QByteArray data, int length);
 	void TurnAudioSlot(bool state);
@@ -65,6 +66,7 @@ private:
 	ThreadMap m_threadMap;
 	bool m_shouldReadFrame = false;
 	ClientInformation m_clientInformation;
+
 };
 
 

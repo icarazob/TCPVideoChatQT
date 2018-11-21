@@ -12,7 +12,7 @@ void MainController::SetView(LoginWindow * loginWindow)
 	Q_ASSERT(loginWindow->GetMainWindow());
 
 	m_loginWindow = loginWindow;
-	m_mainWindow = loginWindow->GetMainWindow();
+	m_mainWindow  = loginWindow->GetMainWindow();
 
 	QObject::connect(m_loginWindow, &LoginWindow::ClientConnected, this, &MainController::ShowMainWindow);
 
@@ -42,7 +42,6 @@ MainController::~MainController()
 
 void MainController::ShowMainWindow()
 {
-
 	auto tcpClient = m_loginWindow->GetTCPClient();
 
 	m_mainWindowController->SetTCPClient(std::move(tcpClient));
