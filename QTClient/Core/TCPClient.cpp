@@ -1,7 +1,8 @@
 #include "TCPClient.h"
+#include "InformationStrings.h"
+#include "FaceDetector.h"
 #include <thread>
 #include <chrono>
-#include <QMessageBox>
 #include <QDebug>
 
 
@@ -17,28 +18,27 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 	std::string message;
 	switch (packet)
 	{
-	case P_AudioMessage:
+	case PacketType::P_AudioMessage:
 	{
 		RecieveAudio();
 		break;
 	}
-	case P_ChatMessage:
+	case PacketType::P_ChatMessage:
 	{
 		RecieveMessage();
 		break;
 	}
 
-	case P_FrameMessage:
+	case PacketType::P_FrameMessage:
 	{
 		RecieveFrame();
 		break;
 	}
-	case P_InformationMessage:
+	case PacketType::P_InformationMessage:
 	{
 		RecieveInformationMessage(message);
 		break;
 	}
-
 
 	default:
 		return false;
@@ -87,11 +87,13 @@ void TCPClient::CreateSocket()
 	}
 }
 
-TCPClient::TCPClient(int port, const char * ip,std::string name)
+TCPClient::TCPClient(int port, const char * ip, std::string name) :
+	m_frameReady(false),
+	m_terminating(false),
+	m_port(port),
+	m_ip(ip),
+	m_name(name)
 {
-	this->m_port = port;
-	this->m_ip = ip;
-	this->m_name = name;
 	
 	InitializeWSA();
 
@@ -105,7 +107,10 @@ TCPClient::TCPClient(int port, const char * ip,std::string name)
 
 TCPClient::~TCPClient()
 {
-
+	if (m_frameThread.joinable())
+	{
+		m_frameThread.join();
+	}
 }
 
 bool TCPClient::Connect()
@@ -125,26 +130,22 @@ bool TCPClient::Connect()
 			std::string message;
 			RecieveInformationMessage(message);
 
-			if (message.compare("Client with the same name exist") == 0)
+			if (message.compare(InformationStrings::IsSameName().toStdString()) == 0)
 			{
 				m_sameName = true;
 				return false;
 			}
-			else if (message.compare("Connected") == 0)
+			else if (message.compare(InformationStrings::Connected().toStdString()) == 0)
 			{
 				m_sameName = false;
 				//Create thread
-				std::thread td(CreateProcessHandler());
-
-				//detach thread
-				td.detach();
+				std::thread(CreateProcessHandler()).detach();
+				m_frameThread = std::thread(&TCPClient::ProcessFrameThread,this);
 
 				return true;
 			}
 		}
-
 	}
-
 
 	return false;
 
@@ -204,15 +205,15 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	std::string stringMessage = buffer;
 	delete[]buffer;
 
-	if (stringMessage.compare("Stop Video") == 0)
+	if (stringMessage.compare(InformationStrings::StopVideo().toStdString()) == 0)
 	{
-		Q_EMIT clearLabel();
+		Q_EMIT stopShowVideo();
 	}
-	else if (stringMessage.compare("Start Video") == 0)
+	else if (stringMessage.compare(InformationStrings::StartVideo().toStdString()) == 0)
 	{
-		Q_EMIT startVideo();
+		Q_EMIT startShowVideo();
 	}
-	else if (stringMessage.compare("List") == 0)
+	else if (stringMessage.compare(InformationStrings::List().toStdString()) == 0)
 	{
 		PacketType packet;
 
@@ -222,7 +223,7 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 			return;
 		}
 
-		if (packet == P_InformationMessage)
+		if (packet == PacketType::P_InformationMessage)
 		{
 			std::string listOfClients;
 			ReceiveMessage(listOfClients);
@@ -263,11 +264,37 @@ void TCPClient::ReceiveMessage(std::string & message)
 
 	return;
 }
+void TCPClient::CreateFaceDetector(QString path)
+{
+	m_faceDetector = std::make_unique<FaceDetector>(path.toStdString());
+}
+void TCPClient::ProcessFrameThread()
+{
+	while (true)
+	{
+		std::unique_lock<std::mutex> lock(m_frameMutex);
+
+		m_cv.wait(lock, [this] {
+			return m_frameReady
+				||m_terminating;
+		});
+
+		if (m_terminating)
+		{
+			break;
+		}
+
+		m_faceDetector->DetectFace(m_currentFrame);
+
+		recieveEventFrame();
+		m_frameReady = false;
+	}
+}
 void TCPClient::SendMessageWithoutName(std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	PacketType packet = P_ChatMessage;
+	PacketType packet = PacketType::P_ChatMessage;
 
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resultPacket == SOCKET_ERROR)
@@ -275,7 +302,7 @@ void TCPClient::SendMessageWithoutName(std::string message)
 		qDebug() << "SendMessageWithoutName: error send packet";
 		return;
 	}
-	int messageSize = message.size();
+	int messageSize = (int)(message.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -299,7 +326,7 @@ void TCPClient::SendMessage(std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	PacketType packet = P_ChatMessage;
+	PacketType packet = PacketType::P_ChatMessage;
 
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if(resultPacket == SOCKET_ERROR)
@@ -310,7 +337,7 @@ void TCPClient::SendMessage(std::string message)
 
 	std::string tempName = m_name + ": ";
 	std::string mesageWithName = message.insert(0, tempName);
-	int messageSize = mesageWithName.size();
+	int messageSize = (int)(mesageWithName.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -333,7 +360,7 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	PacketType packet = P_FrameMessage;
+	PacketType packet = PacketType::P_FrameMessage;
 	//packet
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 
@@ -342,7 +369,7 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 		qDebug() << "SendFrame: error send packet";
 		return;
 	}
-	int bufferSize = buffer.size();
+	int bufferSize = (int)(buffer.size());
 
 	//send int
 	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
@@ -369,7 +396,7 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	PacketType packet = P_AudioMessage;
+	PacketType packet = PacketType::P_AudioMessage;
 
 	int resutlPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resutlPacket == SOCKET_ERROR)
@@ -400,7 +427,7 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 void TCPClient::SendInformationMessage(std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
-	PacketType packet = P_InformationMessage;
+	PacketType packet = PacketType::P_InformationMessage;
 
 	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
 	if (resultPacket == SOCKET_ERROR)
@@ -409,7 +436,7 @@ void TCPClient::SendInformationMessage(std::string message)
 		return;
 	}
 
-	int messageSize = message.size();
+	int messageSize = (int)(message.size());
 
 	int resultInt = send(m_connection, (char*)&messageSize, sizeof(int), NULL);
 
@@ -430,9 +457,28 @@ void TCPClient::SendInformationMessage(std::string message)
 	return;
 }
 
-cv::Mat TCPClient::GetCurrentFrame()
+void TCPClient::SetAppPath(QString path)
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	m_path = path;
+	CreateFaceDetector(m_path);
+}
+
+void TCPClient::StopThread()
+{
+	std::lock_guard<std::mutex> lock(m_frameMutex);
+
+	m_terminating = true;
+
+	m_cv.notify_one();
+}
+
+std::tuple<std::string, std::string, int> TCPClient::GetClientInformation() const
+{
+	return std::make_tuple(m_name, m_ip,m_port);
+}
+
+cv::Mat TCPClient::GetCurrentFrame() const
+{
 	return m_currentFrame;
 }
 
@@ -465,10 +511,11 @@ void TCPClient::RecieveFrame()
 	}
 	
 	
-	cv::Mat frame = cv::imdecode(buffer, 1);
-	m_currentFrame = frame.clone();
+	m_currentFrame = cv::imdecode(buffer, 1);
 
-	Q_EMIT recieveEventFrame();
+	std::lock_guard<std::mutex> lck(m_frameMutex);
+	m_frameReady = true;
+	m_cv.notify_one();
 
 	return;
 

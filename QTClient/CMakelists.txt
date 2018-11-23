@@ -1,18 +1,26 @@
 cmake_minimum_required ( VERSION 3.10.0 FATAL_ERROR)
 
-project(HelloQt)
+project(QtApplication)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+cmake_policy(SET CMP0020 NEW)
+
+
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5MultiMedia REQUIRED)
+find_package(Qt5Core REQUIRED)
+
+
 set(OpenCV_DIR "C:/opencv340/opencv/build")
-
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Multimedia REQUIRED)
-find_package(QT5 REQUIRED COMPONENTS Core Gui)
-
 
 find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+
 
 set(file_settings 
 	${PROJECT_SOURCE_DIR}/settings/XMLsettings.xml
@@ -52,48 +60,47 @@ copy_images(${image_files})
 copy_music(${music_files})
 
 
-set(project_ui
-	mainwindow.ui
-	loginwindow.ui
-	PopUpNotification.ui
-)
-
-set(SOURCES
-	main.cpp
-	mainwindow.cpp
-	TCPClient.cpp
-	loginwindow.cpp
-	NativeFrameLabel.cpp
-	AudioProcessor.cpp
-	PopUpNotification.cpp
-)
-
-set(HEADERS
-	mainwindow.h
-	TCPClient.h
-	loginwindow.h
-	NativeFrameLabel.h
-	AudioProcessor.h
-	PopUpNotification.h
-)
-
-qt5_wrap_ui(project_headers_wrapped ${project_ui})
-qt5_wrap_cpp(project_sources_moc ${HEADERS})
-
-
-include_directories( ${OpenCV_INCLUDE_DIRS})
-add_executable(${PROJECT_NAME}  ${HEADERS} ${SOURCES} ${project_sources_moc}
-	${project_headers_wrapped})
+#include_directories( ${OpenCV_INCLUDE_DIRS})
+#add_executable(${PROJECT_NAME}  ${HEADERS} ${SOURCES})
 	
 #set_target_properties(${PROJECT_NAME} PROPERTIES
 #			WIN32_EXECUTABLE YES
 #)	
 
-target_link_libraries(${PROJECT_NAME}
-		PUBLIC
-		Qt5::Core
-		Qt5::Gui
-		Qt5::Widgets
-		Qt5::Multimedia
-		${OpenCV_LIBS}
-	)
+set(DLIB_DIRS "C:/dlib/dlib-19.6")
+set(DLIB_LIBS "C:/dlib/build/dlib/Release")
+
+set(Qt5DLL_DIR ${Qt5Core_DIR}/../../../bin)
+
+foreach(CONFIGURATION ${CMAKE_CONFIGURATION_TYPES})
+		
+		if (CONFIGURATION STREQUAL "Debug")			
+			#file(COPY ${OpenCV_DIR}/x64/vc14/bin/opencv_world341d.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Cored.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Guid.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Widgetsd.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5MultiMediad.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5MultimediaWidgetsd.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Networkd.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+        else()
+
+			file(COPY ${Qt5DLL_DIR}/Qt5Core.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Gui.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Widgets.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5MultiMedia.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5MultimediaWidgets.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+			file(COPY ${Qt5DLL_DIR}/Qt5Network.dll DESTINATION ${EXECUTABLE_OUTPUT_PATH}/${CONFIGURATION})
+            #file(GLOB ffmpegLibs ${ffmpeg_ROOT_DIR}/lib/${MSVC_DIR}/${BUILD_PLATFORM}/Release/*.dll)
+			
+        endif()
+endforeach()
+
+include_directories(
+    ${CMAKE_SOURCE_DIR}
+)
+
+
+add_subdirectory(Core)
+add_subdirectory(Controllers)
+add_subdirectory(Ui)
+add_subdirectory(Application)

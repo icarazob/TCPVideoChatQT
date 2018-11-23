@@ -1,9 +1,8 @@
 #pragma once
 #include <QObject>
-#include <QLabel>
 #include <QWidget>
 #include <QMouseEvent>
-#include <mutex>
+#include <QLabel>
 #include <opencv2/opencv.hpp>
 
 class NativeFrameLabel : public QWidget {
@@ -11,14 +10,17 @@ class NativeFrameLabel : public QWidget {
 protected:
 	bool eventFilter(QObject *watched, QEvent *event);
 public:
-	explicit NativeFrameLabel(QWidget *parent);
+	explicit NativeFrameLabel(QWidget *parent,QPoint point);
 	~NativeFrameLabel();
 
-	void SetFrame(cv::Mat frame);
+	void SetFrame(const cv::Mat& frame);
 	int GetWidth();
 	int GetHeight();
+	QSize GetSize() const;
+
 	void SetBoundaries(QPoint topLeftBorder,QPoint bottomRightBorder);
 	void Clear();
+	void SetVisibleLabel(bool visibility);
 public slots:
 	void ChangedCondition(bool value);
 private:
@@ -31,5 +33,4 @@ private:
 	int m_width;
 	int m_height;
 	bool m_isStream = false;
-	std::mutex m_mutex;
 };

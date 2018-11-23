@@ -10,23 +10,29 @@
     <height>225</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>346</width>
+    <height>225</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Login</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:1, stop:0.357955 rgba(255, 194, 0, 255), stop:1 rgba(255, 255, 255, 255));</string>
+   <string notr="true"/>
   </property>
   <widget class="QPushButton" name="okButton">
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>170</y>
+     <y>180</y>
      <width>75</width>
      <height>23</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: rgb(170, 170, 255);</string>
+    <string notr="true">background-color: rgb(175, 175, 175);</string>
    </property>
    <property name="text">
     <string>Connect</string>
@@ -35,7 +41,7 @@
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>70</x>
      <y>60</y>
      <width>41</width>
      <height>80</height>
@@ -45,7 +51,7 @@
     <item>
      <widget class="QLabel" name="label_2">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
       <property name="text">
        <string>Port</string>
@@ -55,7 +61,7 @@
     <item>
      <widget class="QLabel" name="label">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
       <property name="text">
        <string>IP</string>
@@ -65,7 +71,7 @@
     <item>
      <widget class="QLabel" name="label_3">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
       <property name="text">
        <string>Name</string>
@@ -87,21 +93,21 @@
     <item>
      <widget class="QLineEdit" name="portLineEdit">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QLineEdit" name="ipLineEdit">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QLineEdit" name="nameLineEdit">
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(170, 170, 255);</string>
+       <string notr="true"/>
       </property>
      </widget>
     </item>

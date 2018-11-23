@@ -2,7 +2,6 @@
 #include <QAudioFormat>
 #include <algorithm>
 #include <iostream>
-#include <QDebug>
 #include <QBuffer>
 #include <QEventLoop>
 
@@ -49,7 +48,7 @@ void AudioProcessor::readMore()
 
 	if (l > 0)
 	{
-		Q_EMIT audioDataPreapre(m_buffer, len);
+		Q_EMIT audioDataPrepare(m_buffer, len);
 		//m_output->write((char*)outdata, len);
 	}
 }
