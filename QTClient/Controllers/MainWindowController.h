@@ -11,6 +11,7 @@
 class MainWindow;
 class TCPClient;
 class AudioProcessor;
+class H264Encoder;
 
 
 class  MainWindowController: public QObject
@@ -27,7 +28,7 @@ private:
 
 	std::function<void(void)> GetVideoHandler();
 
-	void CompressFrame(const cv::Mat& frame, std::vector<uchar>& buffer);
+	std::vector<uchar> CompressFrame(const cv::Mat& frame);
 
 	typedef std::unordered_map<std::string, std::thread> ThreadMap;
 
@@ -55,6 +56,7 @@ private slots:
 	void SendAudioSlot(QByteArray buffer, int length);
 	void SendFrameSlot(std::vector<uchar> data);
 	void SendInformationSlot(QString message);
+	void SendFrame(std::vector<uint8_t> data, int size);
 private:
 	MainWindow *m_view;
 	QString m_appPath;
@@ -62,6 +64,7 @@ private:
 	std::unique_ptr<TCPClient> m_tcpClient;
 	std::unique_ptr<AudioProcessor> m_audioProcesscor;
 	std::unique_ptr<cv::VideoCapture> m_videoCapture;
+	std::unique_ptr<H264Encoder> m_encoder;
 
 	ThreadMap m_threadMap;
 	bool m_shouldReadFrame = false;

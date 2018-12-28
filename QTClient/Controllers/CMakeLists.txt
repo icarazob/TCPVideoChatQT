@@ -9,6 +9,11 @@ set(HEADERS
     MainController.h
     MainWindowController.h
 )
+
+include_directories(
+	${FFMPEG_DIRS}
+)
+
 add_library(
     ${CONTROLLERS_MODULE_NAME}
     STATIC
@@ -22,5 +27,10 @@ target_link_libraries(
     Qt5::Gui
     Qt5::Widgets
 	Qt5::Multimedia
-	    ${OpenCV_LIBS}
+	${OpenCV_LIBS}
+	${FFMPEG_LIBS}/avcodec.lib
+	${FFMPEG_LIBS}/avfilter.lib
+	${FFMPEG_LIBS}/avformat.lib
+	${FFMPEG_LIBS}/swscale.lib
+	${FFMPEG_LIBS}/avutil.lib 	
 )

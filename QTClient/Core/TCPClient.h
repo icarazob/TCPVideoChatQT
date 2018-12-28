@@ -12,7 +12,9 @@
 #include <condition_variable>
 
 
-class FaceDetector;
+
+class Detector;
+class H264Decoder;
 
 class TCPClient: public QObject{
 	Q_OBJECT
@@ -35,7 +37,7 @@ private:
 	void RecieveInformationMessage(std::string &message);
 	void ReceiveMessage(std::string &message);
 	void CreateFaceDetector(QString path);
-	void ProcessFrameThread();
+
 
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
@@ -45,8 +47,10 @@ public:
 	void SendMessageWithoutName(std::string message);
 	void SendMessage(std::string message);
 	void SendFrame(std::vector<uchar> buffer);
+	void SendFrame(std::vector<uint8_t> data, int size);
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
+
 
 
 	std::tuple<std::string, std::string, int> GetClientInformation() const;
@@ -66,6 +70,9 @@ Q_SIGNALS:
 
 	void updateList(QString);
 private:
+
+	void ProcessFrameThread();
+
 	QString m_path;
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
@@ -81,9 +88,10 @@ private:
 	std::mutex m_frameMutex;
 	std::condition_variable m_cv;
 
-	bool m_frameReady = true;
+	bool m_frameReady = false;
 	bool m_sameName = false;
-	bool m_terminating;
+	bool m_terminating = false;
 
-	std::unique_ptr<FaceDetector> m_faceDetector;
+	std::unique_ptr<Detector> m_faceDetector;
+	std::unique_ptr<H264Decoder> m_decoder;
 };

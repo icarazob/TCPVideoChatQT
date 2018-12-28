@@ -96,7 +96,6 @@ LoginWindow::LoginWindow(QMainWindow *parent) :
 
 	ReadXmlSettings(xmlPath);
 
-
 	QRegExp exp("([à-ÿ]|[a-z]|[1-9]|[A-Z]|[À-ß]){1,15}");
 	QRegExpValidator *validator = new QRegExpValidator(exp, this);
 	ui->nameLineEdit->setValidator(validator);

@@ -1,18 +1,21 @@
 #include "MainWindowController.h"
 #include "Core/TCPClient.h"
 #include "Core/AudioProcessor.h"
+#include "FFmpegLib/H264Encoder.h"
 #include "Core/InformationStrings.h"
 #include "UI/mainwindow.h"
 #include <opencv2/highgui/highgui.hpp>
 
+#define __STDC_CONSTANT_MACROS
+#define __STDC_FORMAT_MACROS
 
-
-MainWindowController::MainWindowController(QString path):
+MainWindowController::MainWindowController(QString path) :
 	m_view(nullptr),
 	m_tcpClient(nullptr),
 	m_appPath(path),
 	m_audioProcesscor(std::make_unique<AudioProcessor>()),
-	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi"))
+	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi")),
+	m_encoder(std::make_unique<H264Encoder>())
 {
 
 }
@@ -28,7 +31,7 @@ void MainWindowController::SetView(MainWindow * view)
 	m_tcpClient->SetAppPath(m_appPath);
 
 	SetClientInformation(m_tcpClient->GetClientInformation());
-	
+
 	QObject::connect(m_tcpClient.get(), SIGNAL(stopShowVideo()), this, SLOT(ViewStopShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(startShowVideo()), this, SLOT(ViewStartShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(ViewUpdatePlainText(QString)));
@@ -173,76 +176,80 @@ void MainWindowController::ViewStopShowVideo()
 std::function<void(void)> MainWindowController::GetVideoHandler()
 {
 	return [this]()
+	{
+		QSize frameLabelSize = m_view->GetFrameLabelSize();
+		QSize nativeLabelSize = m_view->GetNativeLabelSize();
+
+		const int c_widthLabel = frameLabelSize.width();
+		const int c_heightLabel = frameLabelSize.height();
+		const int c_widthNativeLabel = nativeLabelSize.width();
+		const int c_heightNativeLabel = nativeLabelSize.height();
+
+
+		m_videoCapture->open(m_appPath.toStdString() + "/Face.avi");
+
+		if (!m_videoCapture->isOpened())
 		{
-			QSize frameLabelSize = m_view->GetFrameLabelSize();
-			QSize nativeLabelSize = m_view->GetNativeLabelSize();
-
-			const int c_widthLabel = frameLabelSize.width();
-			const int c_heightLabel = frameLabelSize.height();
-			const int c_widthNativeLabel = nativeLabelSize.width();
-			const int c_heightNativeLabel = nativeLabelSize.height();
-
-			m_videoCapture->open(m_appPath.toStdString() + "/Face.avi");
-
-			if (!m_videoCapture->isOpened())
-			{
-				return;
-			}
-			cv::Mat frame;
-
-			while (true)
-			{
-				if (m_shouldReadFrame)
-				{
-					bool successReadFrame = m_videoCapture->read(frame);
-
-					if (!successReadFrame)
-					{
-						break;
-					}
-
-					cv::Mat resizedFrame;
-					cv::resize(frame, resizedFrame, cv::Size(c_widthLabel, c_heightLabel));
-
-					//Compress to .png extension
-					std::vector<uchar> data;
-					CompressFrame(resizedFrame, data);
-					SendFrameSlot(data);
-
-					//Show on view
-					cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
-					cv::cvtColor(frame, frame, CV_BGR2RGB);
-					m_view->ShowFrameOnNativeLabel(frame);
-
-					std::this_thread::sleep_for(std::chrono::milliseconds(25));
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			m_videoCapture->release();
-			m_view->ClearNativeFrameLabel();
-
-			SendInformationSlot(InformationStrings::StopVideo());
-
 			return;
-		};
+		}
+		cv::Mat frame;
+
+		while (m_shouldReadFrame)
+		{
+			bool successReadFrame = m_videoCapture->read(frame);
+
+			if (!successReadFrame)
+			{
+				break;
+			}
+
+			cv::Mat resizedFrame;
+			cv::resize(frame, resizedFrame, cv::Size(c_widthLabel, c_heightLabel));
+
+			//Compress to .png extension
+
+			if (m_encoder->Encode(resizedFrame))
+			{
+				//SendFrameSlot(CompressFrame(resizedFrame));
+				SendFrame(m_encoder->GetData(), m_encoder->GetSize());
+
+				//Show on view
+				cv::resize(frame, frame, cv::Size(c_widthNativeLabel, c_heightNativeLabel));
+				cv::cvtColor(frame, frame, CV_BGR2RGB);
+				m_view->ShowFrameOnNativeLabel(frame);
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(25));
+		}
+
+		m_videoCapture->release();
+		m_view->ClearNativeFrameLabel();
+		m_view->StopVideoStream(); //??
+		SendInformationSlot(InformationStrings::StopVideo());
+
+		return;
+	};
 }
 
-void MainWindowController::CompressFrame(const cv::Mat & frame, std::vector<uchar>& buffer)
+std::vector<uchar> MainWindowController::CompressFrame(const cv::Mat& frame)
 {
-	cv::imencode(".png", frame, buffer);
+	std::cout << m_encoder->Encode(frame) << std::endl;
+	std::vector<uchar> data;
+	data.resize(frame.rows*frame.cols);
+	cv::imencode(".png", frame, data);
+	return data;
 }
 
 void MainWindowController::SetClientInformation(std::tuple<std::string, std::string, int> information)
 {
-
 	m_clientInformation.name = std::get<0>(information);
 	m_clientInformation.ip = std::get<1>(information);
 	m_clientInformation.port = std::get<2>(information);
 
 	m_view->SetNameLabel(QString::fromStdString(m_clientInformation.name));
+}
 
+void MainWindowController::SendFrame(std::vector<uint8_t> data, int size)
+{
+	m_tcpClient->SendFrame(data, size);
 }

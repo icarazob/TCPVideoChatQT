@@ -1,6 +1,9 @@
 #include "TCPClient.h"
 #include "InformationStrings.h"
 #include "FaceDetector.h"
+#include "FaceLandmarkDetector.h"
+#include "HaarCascadeDetector.h"
+#include "FFmpegLib/H264Decoder.h"
 #include <thread>
 #include <chrono>
 #include <QDebug>
@@ -92,7 +95,8 @@ TCPClient::TCPClient(int port, const char * ip, std::string name) :
 	m_terminating(false),
 	m_port(port),
 	m_ip(ip),
-	m_name(name)
+	m_name(name),
+	m_decoder(std::make_unique<H264Decoder>())
 {
 	
 	InitializeWSA();
@@ -284,7 +288,7 @@ void TCPClient::ProcessFrameThread()
 			break;
 		}
 
-		m_faceDetector->DetectFace(m_currentFrame);
+		m_faceDetector->Process(m_currentFrame);
 
 		recieveEventFrame();
 		m_frameReady = false;
@@ -388,6 +392,41 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 		return;
 	}
 	
+	return;
+}
+
+void TCPClient::SendFrame(std::vector<uint8_t> data, int size)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	PacketType packet = PacketType::P_FrameMessage;
+	//packet
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send packet";
+		return;
+	}
+	int bufferSize = size;
+
+	//send int
+	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send size";
+		return;
+	}
+	//send frame
+	int resultFrame = send(m_connection,reinterpret_cast<char*>(data.data()), bufferSize, NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send frame";
+		return;
+	}
+
 	return;
 }
 
@@ -509,16 +548,21 @@ void TCPClient::RecieveFrame()
 		qDebug() << "RecieveFrame: error  frame";
 		return;
 	}
-	
-	
-	m_currentFrame = cv::imdecode(buffer, 1);
 
-	std::lock_guard<std::mutex> lck(m_frameMutex);
-	m_frameReady = true;
-	m_cv.notify_one();
+	std::shared_ptr<uint8_t*> data = std::make_shared<uint8_t*>();
+	*data = buffer.data();
+	
+
+	if (m_decoder->Decode(*data, frameSize))
+	{
+		m_currentFrame = m_decoder->GetFrame();
+		std::lock_guard<std::mutex> lck(m_frameMutex);
+		m_frameReady = true;
+		m_cv.notify_one();
+	}
+
 
 	return;
-
 }
 
 void TCPClient::RecieveAudio()
@@ -545,7 +589,7 @@ void TCPClient::RecieveAudio()
 	QByteArray	qBuffer = QByteArray(buffer, length);
 	Q_EMIT recieveEventAudio(qBuffer, length);
 
-	delete[]buffer;
+	delete []buffer;
 
 	return;
 }

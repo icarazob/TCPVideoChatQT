@@ -65,9 +65,8 @@ void MainWindow::ShowFrame(const cv::Mat &copyFrame)
 	if (!m_stopShowVideo)
 	{
 		cv::Mat result;
-		cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
-		cv::cvtColor(result, result, CV_BGR2RGB);
-
+		//cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
+		cv::cvtColor(copyFrame, result, CV_BGR2RGB);
 		ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
 	}
 
@@ -278,6 +277,7 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 		}
 		return QObject::eventFilter(watched, event);
 	}
+
 	return false;
 }
 
@@ -298,9 +298,10 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 	if (FileExist(iconPath))
 	{
 		icon.addFile(iconPath, QSize(), QIcon::Selected, QIcon::On);
+		ui->audioButton->setIcon(icon);
 	}
+	
 
-	ui->audioButton->setIcon(icon);
 	return;
 }
 
@@ -334,22 +335,22 @@ void MainWindow::SetupIcons()
 	if (FileExist(icon1ImagePath))
 	{
 		icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->stopVideoButton->setIcon(icon1);
 	}
 
 	if (FileExist(icon2ImagePath))
 	{
 		icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->videoButton->setIcon(icon2);
 	}
 
 	if (FileExist(icon3ImagePath))
 	{
 		icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->audioButton->setIcon(icon3);
 	}
 
-
-	ui->stopVideoButton->setIcon(icon1);
-	ui->videoButton->setIcon(icon2);
-	ui->audioButton->setIcon(icon3);
+	return;
 }
 
 void MainWindow::SetupElements()

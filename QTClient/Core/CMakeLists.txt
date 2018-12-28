@@ -6,6 +6,9 @@ set(HEADERS
     TCPClient.h
     InformationStrings.h
     FaceDetector.h
+	Detector.h
+    FaceLandmarkDetector.h
+    HaarCascadeDetector.h
 )
 
 set(SOURCES
@@ -13,10 +16,14 @@ set(SOURCES
     NativeFrameLabel.cpp
     TCPClient.cpp
     FaceDetector.cpp
+	Detector.cpp
+    FaceLandmarkDetector.cpp
+    HaarCascadeDetector.cpp
 )
 
 include_directories(
 	${DLIB_DIRS}
+	${FFMPEG_DIRS}
 )
 
 add_library(
