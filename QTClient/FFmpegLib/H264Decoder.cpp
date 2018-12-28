@@ -3,6 +3,7 @@
 H264Decoder::H264Decoder()
 {
 	av_register_all();
+
 	Inititalize();
 }
 
@@ -82,7 +83,6 @@ void H264Decoder::Inititalize()
 
 void H264Decoder::ConvertToMat(AVFrame* image)
 {
-
 	uint8_t *prgb24 = new uint8_t[3 * m_codecContext->width*m_codecContext->height];
 	uint8_t *rgb24[1] = { prgb24 };
 

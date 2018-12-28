@@ -9,6 +9,7 @@ set(HEADERS
 	Detector.h
     FaceLandmarkDetector.h
     HaarCascadeDetector.h
+	SharedQueue.h
 )
 
 set(SOURCES

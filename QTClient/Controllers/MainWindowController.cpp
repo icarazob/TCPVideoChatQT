@@ -14,8 +14,7 @@ MainWindowController::MainWindowController(QString path) :
 	m_tcpClient(nullptr),
 	m_appPath(path),
 	m_audioProcesscor(std::make_unique<AudioProcessor>()),
-	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi")),
-	m_encoder(std::make_unique<H264Encoder>())
+	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi"))
 {
 
 }
@@ -192,6 +191,9 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 		{
 			return;
 		}
+
+		ResetEncoder();
+
 		cv::Mat frame;
 
 		while (m_shouldReadFrame)
@@ -252,4 +254,10 @@ void MainWindowController::SetClientInformation(std::tuple<std::string, std::str
 void MainWindowController::SendFrame(std::vector<uint8_t> data, int size)
 {
 	m_tcpClient->SendFrame(data, size);
+}
+
+void MainWindowController::ResetEncoder()
+{
+	m_encoder.release();
+	m_encoder = std::make_unique<H264Encoder>();
 }

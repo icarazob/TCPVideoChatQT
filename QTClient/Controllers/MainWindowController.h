@@ -58,6 +58,9 @@ private slots:
 	void SendInformationSlot(QString message);
 	void SendFrame(std::vector<uint8_t> data, int size);
 private:
+
+	void ResetEncoder();
+
 	MainWindow *m_view;
 	QString m_appPath;
 

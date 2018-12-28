@@ -32,9 +32,6 @@ AVFrame * H264Encoder::CreateAVFrameFromMat(SwsContext ** swsContext, AVCodecCon
 
 H264Encoder::H264Encoder()
 {
-
-	static int output_channel = 1;
-
 	av_register_all();
 
 	auto codec = avcodec_find_encoder(AV_CODEC_ID_H264);
@@ -48,7 +45,7 @@ H264Encoder::H264Encoder()
 	m_codec_context = avcodec_alloc_context3(codec);
 
 	if (!m_codec_context)
-	{
+	{  
 		std::cout << "Can't alloc context" << std::endl;
 	}
 

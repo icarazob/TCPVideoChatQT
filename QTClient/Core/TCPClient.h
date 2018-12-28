@@ -10,6 +10,8 @@
 #include <tuple>
 #include <opencv2/opencv.hpp>
 #include <condition_variable>
+#include "SharedQueue.h"
+
 
 
 
@@ -38,7 +40,7 @@ private:
 	void ReceiveMessage(std::string &message);
 	void CreateFaceDetector(QString path);
 
-
+	void ResetDecoder();
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
@@ -50,8 +52,6 @@ public:
 	void SendFrame(std::vector<uint8_t> data, int size);
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
-
-
 
 	std::tuple<std::string, std::string, int> GetClientInformation() const;
 	cv::Mat GetCurrentFrame() const;
@@ -85,13 +85,12 @@ private:
 
 	std::thread m_frameThread;
 	std::mutex m_mutex;
-	std::mutex m_frameMutex;
-	std::condition_variable m_cv;
 
-	bool m_frameReady = false;
 	bool m_sameName = false;
 	bool m_terminating = false;
+	bool m_clearQueue = false;
 
 	std::unique_ptr<Detector> m_faceDetector;
 	std::unique_ptr<H264Decoder> m_decoder;
+	SharedQueue<cv::Mat> m_queueFrames;
 };

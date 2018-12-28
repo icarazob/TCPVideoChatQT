@@ -91,7 +91,6 @@ void TCPClient::CreateSocket()
 }
 
 TCPClient::TCPClient(int port, const char * ip, std::string name) :
-	m_frameReady(false),
 	m_terminating(false),
 	m_port(port),
 	m_ip(ip),
@@ -212,6 +211,9 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	if (stringMessage.compare(InformationStrings::StopVideo().toStdString()) == 0)
 	{
 		Q_EMIT stopShowVideo();
+
+		ResetDecoder();
+		m_clearQueue = true;
 	}
 	else if (stringMessage.compare(InformationStrings::StartVideo().toStdString()) == 0)
 	{
@@ -240,7 +242,6 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 
 
 	return;
-
 }
 void TCPClient::ReceiveMessage(std::string & message)
 {
@@ -270,30 +271,37 @@ void TCPClient::ReceiveMessage(std::string & message)
 }
 void TCPClient::CreateFaceDetector(QString path)
 {
-	m_faceDetector = std::make_unique<FaceDetector>(path.toStdString());
+	m_faceDetector = std::make_unique<FaceLandmarkDetector>(path.toStdString());
+}
+void TCPClient::ResetDecoder()
+{
+	m_decoder.release();
+	m_decoder = std::make_unique<H264Decoder>();
 }
 void TCPClient::ProcessFrameThread()
 {
-	while (true)
+	while (!m_terminating)
 	{
-		std::unique_lock<std::mutex> lock(m_frameMutex);
-
-		m_cv.wait(lock, [this] {
-			return m_frameReady
-				||m_terminating;
-		});
-
-		if (m_terminating)
+		while (!m_queueFrames.empty() && !m_clearQueue)
 		{
-			break;
+			m_currentFrame = m_queueFrames.front();
+			m_faceDetector->Process(m_currentFrame);
+			recieveEventFrame();
+			m_queueFrames.pop_front();
+		}
+		
+		if (m_clearQueue)
+		{
+			m_queueFrames.clear();
+			m_clearQueue = false;
 		}
 
-		m_faceDetector->Process(m_currentFrame);
-
-		recieveEventFrame();
-		m_frameReady = false;
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+
+	return;
 }
+
 void TCPClient::SendMessageWithoutName(std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -504,11 +512,7 @@ void TCPClient::SetAppPath(QString path)
 
 void TCPClient::StopThread()
 {
-	std::lock_guard<std::mutex> lock(m_frameMutex);
-
 	m_terminating = true;
-
-	m_cv.notify_one();
 }
 
 std::tuple<std::string, std::string, int> TCPClient::GetClientInformation() const
@@ -555,10 +559,7 @@ void TCPClient::RecieveFrame()
 
 	if (m_decoder->Decode(*data, frameSize))
 	{
-		m_currentFrame = m_decoder->GetFrame();
-		std::lock_guard<std::mutex> lck(m_frameMutex);
-		m_frameReady = true;
-		m_cv.notify_one();
+		m_queueFrames.push_back(m_decoder->GetFrame());
 	}
 
 
