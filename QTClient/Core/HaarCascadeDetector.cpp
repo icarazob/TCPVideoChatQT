@@ -12,7 +12,7 @@ void HaarCascadeDetector::DrawRect(cv::Mat & frame, cv::Rect rectangle, double s
 }
 
 HaarCascadeDetector::HaarCascadeDetector(std::string appPath) :
-	m_appPath(appPath)
+	Detector(appPath)
 {
 	if (m_faceCascade.load(m_appPath + "/models/haarcascade_frontalface_default.xml"))
 	{

@@ -12,10 +12,9 @@ void MainController::SetView(LoginWindow * loginWindow)
 	Q_ASSERT(loginWindow->GetMainWindow());
 
 	m_loginWindow = loginWindow;
-	m_mainWindow  = loginWindow->GetMainWindow();
+	m_mainWindow = loginWindow->GetMainWindow();
 
 	QObject::connect(m_loginWindow, &LoginWindow::ClientConnected, this, &MainController::ShowMainWindow);
-
 }
 
 void MainController::Start()
@@ -24,10 +23,10 @@ void MainController::Start()
 	m_loginWindow->adjustSize();
 }
 
-MainController::MainController(QObject *parent):
-    QObject(parent),
-    m_loginWindow(nullptr),
-    m_mainWindow(nullptr),
+MainController::MainController(QObject *parent) :
+	QObject(parent),
+	m_loginWindow(nullptr),
+	m_mainWindow(nullptr),
 	m_tcpClient(nullptr),
 	m_mainWindowController(nullptr)
 {
@@ -37,7 +36,7 @@ MainController::MainController(QObject *parent):
 
 MainController::~MainController()
 {
-	
+
 }
 
 void MainController::ShowMainWindow()

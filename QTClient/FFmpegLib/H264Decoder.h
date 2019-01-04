@@ -26,7 +26,7 @@ private:
 	void Inititalize();
 	void ConvertToMat(AVFrame* image);
 public:
-	H264Decoder();
+	explicit H264Decoder();
 
 	bool Decode(uint8_t* data, int size);
 

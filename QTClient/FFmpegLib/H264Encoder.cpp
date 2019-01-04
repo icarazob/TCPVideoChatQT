@@ -82,8 +82,6 @@ bool H264Encoder::Encode(const cv::Mat & frame)
 
 	if (avcodec_send_frame(m_codec_context, m_avFrame) < 0)
 	{
-		avcodec_free_context(&m_codec_context);
-		sws_freeContext(m_swsContext);
 		av_frame_free(&m_avFrame);
 		std::cout << "Can't send frame" << std::endl;
 		return false;
@@ -111,7 +109,6 @@ bool H264Encoder::Encode(const cv::Mat & frame)
 		av_packet_unref(&packet);
 		return true;
 	}
-	
 }
 
 std::vector<uint8_t> H264Encoder::GetData() const
@@ -128,4 +125,13 @@ int H264Encoder::GetSize() const
 
 H264Encoder::~H264Encoder()
 {
+	if (m_codec_context)
+	{
+		avcodec_free_context(&m_codec_context);
+	}
+
+	if (m_swsContext)
+	{
+		sws_freeContext(m_swsContext);
+	}
 }

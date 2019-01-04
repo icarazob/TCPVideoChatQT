@@ -49,7 +49,7 @@
         </font>
        </property>
        <property name="text">
-        <string>TCP-chat</string>
+        <string>Chat</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

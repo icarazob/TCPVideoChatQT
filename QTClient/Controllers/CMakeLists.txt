@@ -3,11 +3,14 @@ set(CONTROLLERS_MODULE_NAME Controllers)
 set(SOURCES
     MainController.cpp
     MainWindowController.cpp
+	SettingsWindowContoller.cpp
 )
 
 set(HEADERS
     MainController.h
     MainWindowController.h
+	SettingsWindowContoller.h
+	Common.h
 )
 
 include_directories(

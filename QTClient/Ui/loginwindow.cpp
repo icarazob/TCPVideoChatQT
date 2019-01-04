@@ -81,7 +81,6 @@ void LoginWindow::ReadXmlSettings(QString path)
 			}
 		}
 	}
-
 }
 
 LoginWindow::LoginWindow(QMainWindow *parent) :
@@ -191,7 +190,6 @@ void LoginWindow::exit()
 				ui->connectLabel->setText("Can't connected!");
 				ui->connectLabel->setStyleSheet("color:red");
 			}
-
 		}
 		
 	}

@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 
 FaceDetector::FaceDetector(std::string appPath):
-	m_appPath(appPath),
+	Detector(appPath),
 	m_loadHOG(false)
 {
 	Initialize();

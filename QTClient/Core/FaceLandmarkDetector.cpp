@@ -13,7 +13,7 @@ void FaceLandmarkDetector::DrawRect(cv::Mat& frame, cv::Rect rectangle, double s
 }
 
 FaceLandmarkDetector::FaceLandmarkDetector(std::string appPath) :
-	m_appPath(appPath)
+	Detector(appPath)
 {
 	Initialize();
 }
@@ -35,7 +35,7 @@ void FaceLandmarkDetector::ProcessInternal(cv::Mat & frame)
 		cv::resize(frame, frameDlibHogSmall, cv::Size(inWidth, m_inHeight));
 
 		dlib::cv_image<dlib::bgr_pixel> dlibImage(frameDlibHogSmall);
-		std::vector<dlib::rectangle> faces = detector(dlibImage);
+		std::vector<dlib::rectangle> faces = m_detector(dlibImage);
 
 		for (auto &rect : faces)
 		{
@@ -43,7 +43,7 @@ void FaceLandmarkDetector::ProcessInternal(cv::Mat & frame)
 			cv::Rect rectangle(cv::Point(rect.left(), rect.top()), cv::Point(rect.right(), rect.bottom()));
 			DrawRect(frame, rectangle, scaleWidth, scaleHeight);
 
-			const auto shape = pose_model(dlibImage, rect);
+			const auto shape = m_pose_model(dlibImage, rect);
 
 			//Draw points
 			const int count = shape.num_parts();
@@ -68,9 +68,8 @@ FaceLandmarkDetector::~FaceLandmarkDetector()
 
 void FaceLandmarkDetector::Initialize()
 {
-	detector = dlib::get_frontal_face_detector();
-	dlib::deserialize(m_appPath + "/models/shape_predictor_68_face_landmarks.dat") >> pose_model;
+	m_detector = dlib::get_frontal_face_detector();
+	dlib::deserialize(m_appPath + "/models/shape_predictor_68_face_landmarks.dat") >> m_pose_model;
 
 	m_predictorLoaded = true;
-
 }

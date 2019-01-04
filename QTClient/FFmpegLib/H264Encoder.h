@@ -27,7 +27,7 @@ private:
 
 
 public:
-	H264Encoder();
+	explicit H264Encoder();
 
 	bool Encode(const cv::Mat& frame);
 

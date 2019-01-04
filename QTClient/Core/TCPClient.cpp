@@ -4,10 +4,36 @@
 #include "FaceLandmarkDetector.h"
 #include "HaarCascadeDetector.h"
 #include "FFmpegLib/H264Decoder.h"
+#include "Controllers/Common.h"
 #include <thread>
 #include <chrono>
 #include <QDebug>
 
+TCPClient::TCPClient(int port, const char * ip, std::string name) :
+	m_terminating(false),
+	m_port(port),
+	m_ip(ip),
+	m_name(name),
+	m_decoder(std::make_unique<H264Decoder>()),
+	m_queueFrames(std::make_unique<SharedQueue<cv::Mat>>()),
+	m_faceDetector(std::make_unique<Detector>())
+{
+	InitializeWSA();
+
+	m_addr.sin_addr.s_addr = inet_addr(ip);
+	m_addr.sin_port = htons(port);
+	m_addr.sin_family = AF_INET;
+
+	CreateSocket();
+}
+
+TCPClient::~TCPClient()
+{
+	if (m_frameThread.joinable())
+	{
+		m_frameThread.join();
+	}
+}
 
 bool TCPClient::ProcessPacket(PacketType & packet)
 {
@@ -42,7 +68,6 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 		RecieveInformationMessage(message);
 		break;
 	}
-
 	default:
 		return false;
 		break;
@@ -87,32 +112,6 @@ void TCPClient::CreateSocket()
 	{
 		std::cout << "Can't create a socket" << GetLastError() << std::endl;
 		exit(1);
-	}
-}
-
-TCPClient::TCPClient(int port, const char * ip, std::string name) :
-	m_terminating(false),
-	m_port(port),
-	m_ip(ip),
-	m_name(name),
-	m_decoder(std::make_unique<H264Decoder>())
-{
-	
-	InitializeWSA();
-
-	m_addr.sin_addr.s_addr = inet_addr(ip);
-	m_addr.sin_port = htons(port);
-	m_addr.sin_family = AF_INET;
-
-	CreateSocket();
-
-}
-
-TCPClient::~TCPClient()
-{
-	if (m_frameThread.joinable())
-	{
-		m_frameThread.join();
 	}
 }
 
@@ -269,30 +268,34 @@ void TCPClient::ReceiveMessage(std::string & message)
 
 	return;
 }
-void TCPClient::CreateFaceDetector(QString path)
-{
-	m_faceDetector = std::make_unique<FaceLandmarkDetector>(path.toStdString());
-}
+
 void TCPClient::ResetDecoder()
 {
 	m_decoder.release();
 	m_decoder = std::make_unique<H264Decoder>();
 }
+
 void TCPClient::ProcessFrameThread()
 {
 	while (!m_terminating)
 	{
-		while (!m_queueFrames.empty() && !m_clearQueue)
+		while (!m_queueFrames->empty() && !m_clearQueue)
 		{
-			m_currentFrame = m_queueFrames.front();
-			m_faceDetector->Process(m_currentFrame);
+			m_currentFrame = m_queueFrames->front();
+			
+			if(m_faceDetectorRun)
+			{
+				std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+				m_faceDetector->Process(m_currentFrame);
+			}
+
 			recieveEventFrame();
-			m_queueFrames.pop_front();
+			m_queueFrames->pop_front();
 		}
 		
 		if (m_clearQueue)
 		{
-			m_queueFrames.clear();
+			m_queueFrames->clear();
 			m_clearQueue = false;
 		}
 
@@ -507,7 +510,6 @@ void TCPClient::SendInformationMessage(std::string message)
 void TCPClient::SetAppPath(QString path)
 {
 	m_path = path;
-	CreateFaceDetector(m_path);
 }
 
 void TCPClient::StopThread()
@@ -559,9 +561,8 @@ void TCPClient::RecieveFrame()
 
 	if (m_decoder->Decode(*data, frameSize))
 	{
-		m_queueFrames.push_back(m_decoder->GetFrame());
+		m_queueFrames->push_back(m_decoder->GetFrame());
 	}
-
 
 	return;
 }
@@ -592,5 +593,57 @@ void TCPClient::RecieveAudio()
 
 	delete []buffer;
 
+	return;
+}
+
+
+void TCPClient::ChangeDetector(int type)
+{
+	DetectorType typeDetector = DetectorType(type);
+
+	switch (typeDetector)
+	{
+	case DetectorType::HoG:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<FaceDetector>(m_path.toStdString());
+			m_faceDetectorRun = true;
+			return;
+		}).detach();
+		break;
+	case DetectorType::FaceLandmark:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<FaceLandmarkDetector>(m_path.toStdString());
+			m_faceDetectorRun = true; 
+			return;
+		}).detach();
+		break;
+	case DetectorType::Haar:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<HaarCascadeDetector>(m_path.toStdString());
+			m_faceDetectorRun = true;
+			return;
+		}).detach();
+		break;
+	default:
+		break;
+	}
+}
+
+void TCPClient::CloseDetector()
+{
+	std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+	m_faceDetectorRun = false;
+	m_faceDetector.reset(nullptr);
+	m_faceDetector = std::make_unique<Detector>(m_path.toStdString());
+	m_faceDetectorRun = true;
 	return;
 }

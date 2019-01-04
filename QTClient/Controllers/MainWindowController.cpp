@@ -1,13 +1,19 @@
 #include "MainWindowController.h"
+#include "SettingsWindowContoller.h"
 #include "Core/TCPClient.h"
 #include "Core/AudioProcessor.h"
-#include "FFmpegLib/H264Encoder.h"
 #include "Core/InformationStrings.h"
+#include "FFmpegLib/H264Encoder.h"
 #include "UI/mainwindow.h"
+#include "Ui/DialogAboutProgrammName.h"
+#include "UI/settingswindow.h"
 #include <opencv2/highgui/highgui.hpp>
+
 
 #define __STDC_CONSTANT_MACROS
 #define __STDC_FORMAT_MACROS
+
+
 
 MainWindowController::MainWindowController(QString path) :
 	m_view(nullptr),
@@ -16,7 +22,8 @@ MainWindowController::MainWindowController(QString path) :
 	m_audioProcesscor(std::make_unique<AudioProcessor>()),
 	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi"))
 {
-
+	m_settingsView = new SettingsWindow();
+	m_settingsWindowController = std::make_unique<SettingsWindowController>(path);
 }
 
 void MainWindowController::SetView(MainWindow * view)
@@ -24,11 +31,7 @@ void MainWindowController::SetView(MainWindow * view)
 	Q_ASSERT(view);
 	Q_ASSERT(m_tcpClient);
 
-	m_view = view;
-
-	m_view->SetAppPath(m_appPath);
-	m_tcpClient->SetAppPath(m_appPath);
-
+	Initialize(view);
 	SetClientInformation(m_tcpClient->GetClientInformation());
 
 	QObject::connect(m_tcpClient.get(), SIGNAL(stopShowVideo()), this, SLOT(ViewStopShowVideo()));
@@ -37,12 +40,18 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray, int)), SLOT(ProcessAudioData(QByteArray, int)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(updateList(QString)), SLOT(ViewUpdateList(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
+
 	QObject::connect(m_audioProcesscor.get(), SIGNAL(audioDataPrepare(QByteArray, int)), SLOT(SendAudioSlot(QByteArray, int)));
 
 	QObject::connect(m_view, &MainWindow::SendMessageSignal, this, &MainWindowController::SendMessageSlot);
 	QObject::connect(m_view, &MainWindow::TurnAudioSignal, this, &MainWindowController::TurnAudioSlot);
 	QObject::connect(m_view, &MainWindow::SendInformationSignal, this, &MainWindowController::SendInformationSlot);
 	QObject::connect(m_view, &MainWindow::TurnVideoSignal, this, &MainWindowController::TurnVideoSlot);
+	QObject::connect(m_view, &MainWindow::AboutClickedSignal, this, &MainWindowController::ShowAboutWidget);
+	QObject::connect(m_view, &MainWindow::SettingsClickedSignal, this, &MainWindowController::ShowSettingsWidget);
+
+	QObject::connect(m_settingsWindowController.get(), &SettingsWindowController::ChangeDetectorSignal, this, &MainWindowController::ChangeDetectorSlot);
+	QObject::connect(m_settingsWindowController.get(), &SettingsWindowController::CloseDetectorSignal, this, &MainWindowController::CloseDetectorSlot);
 
 	SendInformationSlot(InformationStrings::Setup());
 }
@@ -235,7 +244,6 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 
 std::vector<uchar> MainWindowController::CompressFrame(const cv::Mat& frame)
 {
-	std::cout << m_encoder->Encode(frame) << std::endl;
 	std::vector<uchar> data;
 	data.resize(frame.rows*frame.cols);
 	cv::imencode(".png", frame, data);
@@ -258,6 +266,40 @@ void MainWindowController::SendFrame(std::vector<uint8_t> data, int size)
 
 void MainWindowController::ResetEncoder()
 {
-	m_encoder.release();
+	m_encoder.reset(nullptr);
 	m_encoder = std::make_unique<H264Encoder>();
+}
+
+void MainWindowController::ShowAboutWidget()
+{
+	m_aboutView->show();
+	m_aboutView->adjustSize();
+}
+
+void MainWindowController::ShowSettingsWidget()
+{
+	m_settingsWindowController->SetView(m_settingsView);
+
+	m_settingsView->show();
+	m_settingsView->adjustSize();
+}
+
+void MainWindowController::Initialize(MainWindow * view)
+{
+	m_view = view;
+
+	m_view->SetAppPath(m_appPath);
+	m_tcpClient->SetAppPath(m_appPath);
+
+	m_aboutView = std::make_unique<DialogAboutProgrammName>(m_view);
+}
+
+void MainWindowController::ChangeDetectorSlot(int type)
+{
+	m_tcpClient->ChangeDetector(type);
+}
+
+void MainWindowController::CloseDetectorSlot()
+{
+	m_tcpClient->CloseDetector();
 }

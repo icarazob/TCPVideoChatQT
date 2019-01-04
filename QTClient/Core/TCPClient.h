@@ -28,22 +28,22 @@ public:
 		P_InformationMessage
 	};
 private:
+	void InitializeWSA();
+	void CreateSocket();
+	std::function<void (void)> CreateProcessHandler();
 
 	bool ProcessPacket(PacketType &packet);
-	void InitializeWSA();
-	std::function<void (void)> CreateProcessHandler();
-	void CreateSocket();
 	void RecieveFrame();
 	void RecieveAudio();
 	void RecieveMessage();
 	void RecieveInformationMessage(std::string &message);
 	void ReceiveMessage(std::string &message);
-	void CreateFaceDetector(QString path);
 
 	void ResetDecoder();
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
+
 	bool Connect();
 
 	void SendMessageWithoutName(std::string message);
@@ -59,6 +59,9 @@ public:
 	void SetAppPath(QString path);
 	void StopThread();
 	bool IsSameName();
+
+	void ChangeDetector(int type);
+	void CloseDetector();
 	
 Q_SIGNALS:
 	void recieveEventMessage(QString message);
@@ -84,13 +87,15 @@ private:
 	std::string m_ip;
 
 	std::thread m_frameThread;
+	std::mutex m_frameThreadMutex;
 	std::mutex m_mutex;
 
 	bool m_sameName = false;
 	bool m_terminating = false;
 	bool m_clearQueue = false;
+	bool m_faceDetectorRun = true;
 
 	std::unique_ptr<Detector> m_faceDetector;
 	std::unique_ptr<H264Decoder> m_decoder;
-	SharedQueue<cv::Mat> m_queueFrames;
+	std::unique_ptr<SharedQueue<cv::Mat>> m_queueFrames;
 };

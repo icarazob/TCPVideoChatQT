@@ -17,7 +17,6 @@ public:
 	virtual ~HaarCascadeDetector();
 
 private:
-	std::string m_appPath;
 	cv::CascadeClassifier m_faceCascade;
 	bool m_cascadeLoaded = false;
 	int m_inHeight = 300;

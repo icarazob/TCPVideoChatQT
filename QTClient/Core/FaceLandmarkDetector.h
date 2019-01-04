@@ -24,8 +24,7 @@ private:
 	void Initialize();
 
 	bool m_predictorLoaded = false;
-	dlib::frontal_face_detector detector;
-	dlib::shape_predictor pose_model;
-	std::string m_appPath;
+	dlib::frontal_face_detector m_detector;
+	dlib::shape_predictor m_pose_model;
 	int m_inHeight = 350;
 };

@@ -22,7 +22,6 @@ private:
 	void Initialize();
 
 	bool m_loadHOG = false;
-	std::string m_appPath;
 	dlib::frontal_face_detector m_hogFaceDetector;
 	int m_inHeight = 350;
 };
