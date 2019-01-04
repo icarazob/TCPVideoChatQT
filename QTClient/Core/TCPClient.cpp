@@ -271,7 +271,7 @@ void TCPClient::ReceiveMessage(std::string & message)
 
 void TCPClient::ResetDecoder()
 {
-	m_decoder.release();
+	m_decoder.reset(nullptr);
 	m_decoder = std::make_unique<H264Decoder>();
 }
 
