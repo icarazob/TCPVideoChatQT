@@ -4,18 +4,24 @@ set(SOURCES
 	loginwindow.cpp
 	mainwindow.cpp
 	PopUpNotification.cpp
+	DialogAboutProgrammName.cpp
+	settingswindow.cpp
 )
 
 set(HEADERS
 	loginwindow.h
 	mainwindow.h
 	PopUpNotification.h
+	DialogAboutProgrammName.h
+	settingswindow.h
 )
 
 set(UI_FILES
 	loginwindow.ui
 	mainwindow.ui
 	PopUpNotification.ui
+	DialogAboutProgrammName.ui
+	settingswindow.ui
 )
 
 qt5_wrap_ui(UI_FILES ${UI_FILES})

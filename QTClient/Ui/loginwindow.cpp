@@ -81,7 +81,6 @@ void LoginWindow::ReadXmlSettings(QString path)
 			}
 		}
 	}
-
 }
 
 LoginWindow::LoginWindow(QMainWindow *parent) :
@@ -95,7 +94,6 @@ LoginWindow::LoginWindow(QMainWindow *parent) :
 	xmlPath = xmlPath + "/settings/XMLsettings.xml";
 
 	ReadXmlSettings(xmlPath);
-
 
 	QRegExp exp("([à-ÿ]|[a-z]|[1-9]|[A-Z]|[À-ß]){1,15}");
 	QRegExpValidator *validator = new QRegExpValidator(exp, this);
@@ -192,7 +190,6 @@ void LoginWindow::exit()
 				ui->connectLabel->setText("Can't connected!");
 				ui->connectLabel->setStyleSheet("color:red");
 			}
-
 		}
 		
 	}

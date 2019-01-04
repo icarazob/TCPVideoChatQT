@@ -20,14 +20,15 @@ MainWindow::MainWindow(QMainWindow *parent):
 	m_notification(std::make_unique<PopUpNotification>()),
 	m_stopShowVideo(true)
 {
-
 	ui->setupUi(this);
 	
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
-	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()), this, SLOT(ListItemClicked()));
+	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
+	QObject::connect(ui->menuAbout, SIGNAL(aboutToShow()), SIGNAL(AboutClickedSignal()));
+	QObject::connect(ui->settingsButton, SIGNAL(clicked()), SIGNAL(SettingsClickedSignal()));
 
 	SetupElements();
 
@@ -65,9 +66,8 @@ void MainWindow::ShowFrame(const cv::Mat &copyFrame)
 	if (!m_stopShowVideo)
 	{
 		cv::Mat result;
-		cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
-		cv::cvtColor(result, result, CV_BGR2RGB);
-
+		//cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
+		cv::cvtColor(copyFrame, result, CV_BGR2RGB);
 		ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
 	}
 
@@ -243,6 +243,7 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 	static bool enterRelease = true;
 	static bool shiftPress = false;
 	static bool shiftRelease = true;
+
 	if (event->type() == QEvent::KeyPress) {
 
 		QKeyEvent* key = static_cast<QKeyEvent*>(event);
@@ -278,6 +279,7 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 		}
 		return QObject::eventFilter(watched, event);
 	}
+
 	return false;
 }
 
@@ -286,6 +288,7 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 {
 	QIcon icon;
 	QString iconPath;
+
 	if (status)
 	{
 		iconPath = m_path + "/images/crossed_microphone.png";
@@ -298,9 +301,10 @@ void MainWindow::ChangeMicrophoneIcon(bool status)
 	if (FileExist(iconPath))
 	{
 		icon.addFile(iconPath, QSize(), QIcon::Selected, QIcon::On);
+		ui->audioButton->setIcon(icon);
 	}
+	
 
-	ui->audioButton->setIcon(icon);
 	return;
 }
 
@@ -321,35 +325,40 @@ void MainWindow::ClearPlainText()
 	ui->plainTextEdit->clear();
 }
 
-
-
 void MainWindow::SetupIcons()
 {
-	QIcon icon1, icon2, icon3;
+	QIcon icon1, icon2, icon3, icon4;
 
 	QString icon1ImagePath = m_path + "/images/Stop.png";
 	QString icon2ImagePath = m_path + "/images/Play.png";
 	QString icon3ImagePath = m_path + "/images/microphone.png";
+	QString icon4ImagePath = m_path + "/images/settings.png";
 
 	if (FileExist(icon1ImagePath))
 	{
 		icon1.addFile(icon1ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->stopVideoButton->setIcon(icon1);
 	}
 
 	if (FileExist(icon2ImagePath))
 	{
 		icon2.addFile(icon2ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->videoButton->setIcon(icon2);
 	}
 
 	if (FileExist(icon3ImagePath))
 	{
 		icon3.addFile(icon3ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->audioButton->setIcon(icon3);
 	}
 
+	if (FileExist(icon4ImagePath))
+	{
+		icon4.addFile(icon4ImagePath, QSize(), QIcon::Selected, QIcon::On);
+		ui->settingsButton->setIcon(icon4);
+	}
 
-	ui->stopVideoButton->setIcon(icon1);
-	ui->videoButton->setIcon(icon2);
-	ui->audioButton->setIcon(icon3);
+	return;
 }
 
 void MainWindow::SetupElements()

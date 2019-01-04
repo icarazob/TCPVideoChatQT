@@ -10,9 +10,13 @@
 #include <tuple>
 #include <opencv2/opencv.hpp>
 #include <condition_variable>
+#include "SharedQueue.h"
 
 
-class FaceDetector;
+
+
+class Detector;
+class H264Decoder;
 
 class TCPClient: public QObject{
 	Q_OBJECT
@@ -24,30 +28,30 @@ public:
 		P_InformationMessage
 	};
 private:
+	void InitializeWSA();
+	void CreateSocket();
+	std::function<void (void)> CreateProcessHandler();
 
 	bool ProcessPacket(PacketType &packet);
-	void InitializeWSA();
-	std::function<void (void)> CreateProcessHandler();
-	void CreateSocket();
 	void RecieveFrame();
 	void RecieveAudio();
 	void RecieveMessage();
 	void RecieveInformationMessage(std::string &message);
 	void ReceiveMessage(std::string &message);
-	void CreateFaceDetector(QString path);
-	void ProcessFrameThread();
 
+	void ResetDecoder();
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
+
 	bool Connect();
 
 	void SendMessageWithoutName(std::string message);
 	void SendMessage(std::string message);
 	void SendFrame(std::vector<uchar> buffer);
+	void SendFrame(std::vector<uint8_t> data, int size);
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
-
 
 	std::tuple<std::string, std::string, int> GetClientInformation() const;
 	cv::Mat GetCurrentFrame() const;
@@ -55,6 +59,9 @@ public:
 	void SetAppPath(QString path);
 	void StopThread();
 	bool IsSameName();
+
+	void ChangeDetector(int type);
+	void CloseDetector();
 	
 Q_SIGNALS:
 	void recieveEventMessage(QString message);
@@ -66,6 +73,9 @@ Q_SIGNALS:
 
 	void updateList(QString);
 private:
+
+	void ProcessFrameThread();
+
 	QString m_path;
 	WSADATA m_wsaData;
 	SOCKADDR_IN m_addr;
@@ -77,13 +87,15 @@ private:
 	std::string m_ip;
 
 	std::thread m_frameThread;
+	std::mutex m_frameThreadMutex;
 	std::mutex m_mutex;
-	std::mutex m_frameMutex;
-	std::condition_variable m_cv;
 
-	bool m_frameReady = true;
 	bool m_sameName = false;
-	bool m_terminating;
+	bool m_terminating = false;
+	bool m_clearQueue = false;
+	bool m_faceDetectorRun = true;
 
-	std::unique_ptr<FaceDetector> m_faceDetector;
+	std::unique_ptr<Detector> m_faceDetector;
+	std::unique_ptr<H264Decoder> m_decoder;
+	std::unique_ptr<SharedQueue<cv::Mat>> m_queueFrames;
 };

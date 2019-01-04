@@ -97,7 +97,7 @@ bool NativeFrameLabel::eventFilter(QObject * watched, QEvent * event)
 }
 
 NativeFrameLabel::NativeFrameLabel(QWidget *parent,QPoint point) :
-	QWidget(parent)
+	QWidget(nullptr)
 {
 	m_nativeLabel = new QLabel(parent);
 

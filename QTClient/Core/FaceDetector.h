@@ -1,20 +1,28 @@
 #pragma once
-#include <opencv2/opencv.hpp>
+#include "Detector.h"
 #include <string>
+#include "dlib/opencv/cv_image.h"
+#include "dlib/image_processing/frontal_face_detector.h"
 
 
+namespace cv {
+	class Mat;
+}
 
-class FaceDetector
+class FaceDetector: public Detector
 {
 public:
 	FaceDetector(std::string appPath);
 
-	void DetectFace(cv::Mat& frame);
+	void ProcessInternal(cv::Mat& frame) override;
 
-	~FaceDetector();
+	virtual ~FaceDetector();
 
 private:
+	void Initialize();
+
 	bool m_loadHOG = false;
-	std::string m_appPath;
+	dlib::frontal_face_detector m_hogFaceDetector;
+	int m_inHeight = 350;
 };
 

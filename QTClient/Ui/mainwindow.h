@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <memory>
 #include <iostream>
+#include <QPOinter>
 
 namespace Ui {
 class MainWindow;
@@ -59,6 +60,8 @@ Q_SIGNALS:
 	void videoStream(bool);
 	void SendInformationSignal(QString message);
 	void TurnVideoSignal(bool state);
+	void AboutClickedSignal();
+	void SettingsClickedSignal();
 
 public slots:
 	void UpdatePlain();
@@ -76,6 +79,8 @@ private:
 
 	bool m_lastStateAudioButton = false;
 	bool m_stopShowVideo = false;
+
+	QPointer<QAction> m_Act = nullptr;
 };
 
 #endif // MAINWINDOW_H

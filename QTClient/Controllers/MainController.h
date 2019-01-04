@@ -7,7 +7,8 @@ class MainWindow;
 class TCPClient;
 class MainWindowController;
 
-class MainController: public QObject
+
+class MainController : public QObject
 {
 	Q_OBJECT
 public:
@@ -18,7 +19,7 @@ public:
 
 	~MainController();
 
-public slots:
+	public slots:
 	void ShowMainWindow();
 
 private:
@@ -28,3 +29,4 @@ private:
 	std::unique_ptr<TCPClient> m_tcpClient;
 	std::unique_ptr<MainWindowController> m_mainWindowController;
 };
+

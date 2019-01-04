@@ -1,10 +1,39 @@
 #include "TCPClient.h"
 #include "InformationStrings.h"
 #include "FaceDetector.h"
+#include "FaceLandmarkDetector.h"
+#include "HaarCascadeDetector.h"
+#include "FFmpegLib/H264Decoder.h"
+#include "Controllers/Common.h"
 #include <thread>
 #include <chrono>
 #include <QDebug>
 
+TCPClient::TCPClient(int port, const char * ip, std::string name) :
+	m_terminating(false),
+	m_port(port),
+	m_ip(ip),
+	m_name(name),
+	m_decoder(std::make_unique<H264Decoder>()),
+	m_queueFrames(std::make_unique<SharedQueue<cv::Mat>>()),
+	m_faceDetector(std::make_unique<Detector>())
+{
+	InitializeWSA();
+
+	m_addr.sin_addr.s_addr = inet_addr(ip);
+	m_addr.sin_port = htons(port);
+	m_addr.sin_family = AF_INET;
+
+	CreateSocket();
+}
+
+TCPClient::~TCPClient()
+{
+	if (m_frameThread.joinable())
+	{
+		m_frameThread.join();
+	}
+}
 
 bool TCPClient::ProcessPacket(PacketType & packet)
 {
@@ -39,7 +68,6 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 		RecieveInformationMessage(message);
 		break;
 	}
-
 	default:
 		return false;
 		break;
@@ -84,32 +112,6 @@ void TCPClient::CreateSocket()
 	{
 		std::cout << "Can't create a socket" << GetLastError() << std::endl;
 		exit(1);
-	}
-}
-
-TCPClient::TCPClient(int port, const char * ip, std::string name) :
-	m_frameReady(false),
-	m_terminating(false),
-	m_port(port),
-	m_ip(ip),
-	m_name(name)
-{
-	
-	InitializeWSA();
-
-	m_addr.sin_addr.s_addr = inet_addr(ip);
-	m_addr.sin_port = htons(port);
-	m_addr.sin_family = AF_INET;
-
-	CreateSocket();
-
-}
-
-TCPClient::~TCPClient()
-{
-	if (m_frameThread.joinable())
-	{
-		m_frameThread.join();
 	}
 }
 
@@ -208,6 +210,9 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	if (stringMessage.compare(InformationStrings::StopVideo().toStdString()) == 0)
 	{
 		Q_EMIT stopShowVideo();
+
+		ResetDecoder();
+		m_clearQueue = true;
 	}
 	else if (stringMessage.compare(InformationStrings::StartVideo().toStdString()) == 0)
 	{
@@ -236,7 +241,6 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 
 
 	return;
-
 }
 void TCPClient::ReceiveMessage(std::string & message)
 {
@@ -264,32 +268,43 @@ void TCPClient::ReceiveMessage(std::string & message)
 
 	return;
 }
-void TCPClient::CreateFaceDetector(QString path)
+
+void TCPClient::ResetDecoder()
 {
-	m_faceDetector = std::make_unique<FaceDetector>(path.toStdString());
+	m_decoder.reset(nullptr);
+	m_decoder = std::make_unique<H264Decoder>();
 }
+
 void TCPClient::ProcessFrameThread()
 {
-	while (true)
+	while (!m_terminating)
 	{
-		std::unique_lock<std::mutex> lock(m_frameMutex);
-
-		m_cv.wait(lock, [this] {
-			return m_frameReady
-				||m_terminating;
-		});
-
-		if (m_terminating)
+		while (!m_queueFrames->empty() && !m_clearQueue)
 		{
-			break;
+			m_currentFrame = m_queueFrames->front();
+			
+			if(m_faceDetectorRun)
+			{
+				std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+				m_faceDetector->Process(m_currentFrame);
+			}
+
+			recieveEventFrame();
+			m_queueFrames->pop_front();
+		}
+		
+		if (m_clearQueue)
+		{
+			m_queueFrames->clear();
+			m_clearQueue = false;
 		}
 
-		m_faceDetector->DetectFace(m_currentFrame);
-
-		recieveEventFrame();
-		m_frameReady = false;
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+
+	return;
 }
+
 void TCPClient::SendMessageWithoutName(std::string message)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -391,6 +406,41 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 	return;
 }
 
+void TCPClient::SendFrame(std::vector<uint8_t> data, int size)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	PacketType packet = PacketType::P_FrameMessage;
+	//packet
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send packet";
+		return;
+	}
+	int bufferSize = size;
+
+	//send int
+	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send size";
+		return;
+	}
+	//send frame
+	int resultFrame = send(m_connection,reinterpret_cast<char*>(data.data()), bufferSize, NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrame: error send frame";
+		return;
+	}
+
+	return;
+}
+
 void TCPClient::SendAudio(QByteArray buffer, int length)
 {
 
@@ -460,16 +510,11 @@ void TCPClient::SendInformationMessage(std::string message)
 void TCPClient::SetAppPath(QString path)
 {
 	m_path = path;
-	CreateFaceDetector(m_path);
 }
 
 void TCPClient::StopThread()
 {
-	std::lock_guard<std::mutex> lock(m_frameMutex);
-
 	m_terminating = true;
-
-	m_cv.notify_one();
 }
 
 std::tuple<std::string, std::string, int> TCPClient::GetClientInformation() const
@@ -509,16 +554,17 @@ void TCPClient::RecieveFrame()
 		qDebug() << "RecieveFrame: error  frame";
 		return;
 	}
-	
-	
-	m_currentFrame = cv::imdecode(buffer, 1);
 
-	std::lock_guard<std::mutex> lck(m_frameMutex);
-	m_frameReady = true;
-	m_cv.notify_one();
+	std::shared_ptr<uint8_t*> data = std::make_shared<uint8_t*>();
+	*data = buffer.data();
+	
+
+	if (m_decoder->Decode(*data, frameSize))
+	{
+		m_queueFrames->push_back(m_decoder->GetFrame());
+	}
 
 	return;
-
 }
 
 void TCPClient::RecieveAudio()
@@ -545,7 +591,59 @@ void TCPClient::RecieveAudio()
 	QByteArray	qBuffer = QByteArray(buffer, length);
 	Q_EMIT recieveEventAudio(qBuffer, length);
 
-	delete[]buffer;
+	delete []buffer;
 
+	return;
+}
+
+
+void TCPClient::ChangeDetector(int type)
+{
+	DetectorType typeDetector = DetectorType(type);
+
+	switch (typeDetector)
+	{
+	case DetectorType::HoG:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<FaceDetector>(m_path.toStdString());
+			m_faceDetectorRun = true;
+			return;
+		}).detach();
+		break;
+	case DetectorType::FaceLandmark:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<FaceLandmarkDetector>(m_path.toStdString());
+			m_faceDetectorRun = true; 
+			return;
+		}).detach();
+		break;
+	case DetectorType::Haar:
+		std::thread([this] {
+			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+			m_faceDetectorRun = false;
+			m_faceDetector.reset(nullptr);
+			m_faceDetector = std::make_unique<HaarCascadeDetector>(m_path.toStdString());
+			m_faceDetectorRun = true;
+			return;
+		}).detach();
+		break;
+	default:
+		break;
+	}
+}
+
+void TCPClient::CloseDetector()
+{
+	std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+	m_faceDetectorRun = false;
+	m_faceDetector.reset(nullptr);
+	m_faceDetector = std::make_unique<Detector>(m_path.toStdString());
+	m_faceDetectorRun = true;
 	return;
 }
