@@ -23,8 +23,8 @@ extern "C"
 class H264Encoder
 {
 private:
-	AVFrame* CreateAVFrameFromMat(SwsContext **swsContext, AVCodecContext **outputCodecContext, const cv::Mat& image);
 
+	AVFrame* CreateAVFrameFromMat(SwsContext **swsContext, AVCodecContext **outputCodecContext, const cv::Mat& image);
 
 public:
 	explicit H264Encoder();

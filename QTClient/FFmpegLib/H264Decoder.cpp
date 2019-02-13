@@ -66,8 +66,8 @@ void H264Decoder::Inititalize()
 		return;
 	}
 
-	m_codecContext->width = 640;
-	m_codecContext->height = 480;
+	m_codecContext->width = 480;
+	m_codecContext->height = 320;
 
 	if (avcodec_open2(m_codecContext, decoderCodec, NULL) < 0)
 	{
@@ -93,7 +93,7 @@ void H264Decoder::ConvertToMat(AVFrame* image)
 	cv::Mat mat(m_codecContext->height, m_codecContext->width, CV_8UC3, rgb24[0], rgb24_stride[0]);
 	mat.copyTo(m_currentFrame);
 
-	delete prgb24;
+	delete []prgb24; //[] inserted
 
 	return;
 }

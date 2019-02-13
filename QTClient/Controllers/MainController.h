@@ -20,7 +20,7 @@ public:
 	~MainController();
 
 	public slots:
-	void ShowMainWindow();
+		void ShowMainWindow();
 
 private:
 	LoginWindow *m_loginWindow;

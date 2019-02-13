@@ -37,7 +37,7 @@ void FaceLandmarkDetector::ProcessInternal(cv::Mat & frame)
 		dlib::cv_image<dlib::bgr_pixel> dlibImage(frameDlibHogSmall);
 		std::vector<dlib::rectangle> faces = m_detector(dlibImage);
 
-		for (auto &rect : faces)
+		for (const auto &rect : faces)
 		{
 			//Draw rectangle
 			cv::Rect rectangle(cv::Point(rect.left(), rect.top()), cv::Point(rect.right(), rect.bottom()));

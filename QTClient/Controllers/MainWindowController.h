@@ -76,6 +76,7 @@ private:
 
 	MainWindow *m_view;
 	SettingsWindow *m_settingsView = nullptr;
+	std::unique_ptr<DialogAboutProgrammName> m_aboutView;
 
 	QString m_appPath;
 
@@ -85,7 +86,7 @@ private:
 	std::unique_ptr<cv::VideoCapture> m_videoCapture;
 	std::unique_ptr<H264Encoder> m_encoder;
 
-	std::unique_ptr<DialogAboutProgrammName> m_aboutView;
+
 
 	ThreadMap m_threadMap;
 	bool m_shouldReadFrame = false;

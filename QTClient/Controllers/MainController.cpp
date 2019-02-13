@@ -46,6 +46,7 @@ void MainController::ShowMainWindow()
 	m_mainWindowController->SetTCPClient(std::move(tcpClient));
 	m_mainWindowController->SetView(m_mainWindow);
 
-	m_mainWindow->adjustSize();
 	m_mainWindow->show();
+	m_mainWindow->adjustSize();
+
 }

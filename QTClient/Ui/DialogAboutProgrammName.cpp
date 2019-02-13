@@ -10,4 +10,5 @@ DialogAboutProgrammName::DialogAboutProgrammName(QWidget *parent):
 
 DialogAboutProgrammName::~DialogAboutProgrammName()
 {
+	delete ui;
 }

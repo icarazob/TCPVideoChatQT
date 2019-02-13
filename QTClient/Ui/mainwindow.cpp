@@ -13,6 +13,8 @@
 #include <QSound>
 #include <QFileInfo>
 #include <opencv2\opencv.hpp>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 
 MainWindow::MainWindow(QMainWindow *parent):
 	QMainWindow(parent),
@@ -21,6 +23,8 @@ MainWindow::MainWindow(QMainWindow *parent):
 	m_stopShowVideo(true)
 {
 	ui->setupUi(this);
+	ui->label->setVisible(false);
+	ui->plainTextEdit->setMinimumHeight(300);
 	
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
@@ -82,8 +86,9 @@ void MainWindow::ShowFrameOnNativeLabel(const cv::Mat& frame)
 void MainWindow::StartShowVideo()
 {
 	m_stopShowVideo = false;
+	ui->plainTextEdit->setMinimumHeight(150);
 	ui->label->setVisible(true);
-	ui->plainTextEdit->setGeometry(280, 480, 761, 200);
+	//ui->plainTextEdit->setGeometry(280, 480, 761, 200);
 }
 
 void MainWindow::UpdatePlain()
@@ -224,6 +229,7 @@ void MainWindow::ListItemClicked()
 	static QListWidgetItem *previousItem = new QListWidgetItem();
 	previousItem->setBackgroundColor(Qt::white);
 	
+	//twice initialize
 	QListWidgetItem *newItem = new QListWidgetItem();
 	newItem = ui->clientsList->currentItem();
 
@@ -333,6 +339,7 @@ void MainWindow::SetupIcons()
 	QString icon2ImagePath = m_path + "/images/Play.png";
 	QString icon3ImagePath = m_path + "/images/microphone.png";
 	QString icon4ImagePath = m_path + "/images/settings.png";
+	QString windowIconPath = m_path + "/images/window-icon.png";
 
 	if (FileExist(icon1ImagePath))
 	{
@@ -356,6 +363,11 @@ void MainWindow::SetupIcons()
 	{
 		icon4.addFile(icon4ImagePath, QSize(), QIcon::Selected, QIcon::On);
 		ui->settingsButton->setIcon(icon4);
+	}
+
+	if (FileExist(windowIconPath))
+	{
+		this->setWindowIcon(QIcon(windowIconPath));
 	}
 
 	return;

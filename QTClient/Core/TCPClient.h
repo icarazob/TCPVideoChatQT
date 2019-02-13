@@ -27,6 +27,7 @@ public:
 		P_AudioMessage,
 		P_InformationMessage
 	};
+
 private:
 	void InitializeWSA();
 	void CreateSocket();
@@ -40,6 +41,10 @@ private:
 	void ReceiveMessage(std::string &message);
 
 	void ResetDecoder();
+
+	template<typename type>
+	void ResetDetector();
+
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
 	~TCPClient();
@@ -72,6 +77,7 @@ Q_SIGNALS:
 	void stopShowVideo();
 
 	void updateList(QString);
+
 private:
 
 	void ProcessFrameThread();
@@ -99,3 +105,5 @@ private:
 	std::unique_ptr<H264Decoder> m_decoder;
 	std::unique_ptr<SharedQueue<cv::Mat>> m_queueFrames;
 };
+
+

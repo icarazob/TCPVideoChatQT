@@ -28,7 +28,7 @@ void FaceDetector::ProcessInternal(cv::Mat& frame)
 
 		std::vector<dlib::rectangle> faces = m_hogFaceDetector(dlibIm);
 
-		for (auto &face : faces)
+		for (const auto &face : faces)
 		{
 			int x1 = (int)(face.left() * scaleWidth);
 			int y1 = (int)(face.top() * scaleHeight);

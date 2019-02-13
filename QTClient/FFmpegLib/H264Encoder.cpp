@@ -3,9 +3,7 @@
 AVFrame * H264Encoder::CreateAVFrameFromMat(SwsContext ** swsContext, AVCodecContext ** outputCodecContext, const cv::Mat & image)
 {
 	auto cctx = *outputCodecContext;
-	AVFrame* frame = nullptr;
-
-	frame = av_frame_alloc();
+	AVFrame* frame = av_frame_alloc();
 
 	frame->format = AV_PIX_FMT_YUV420P;
 	frame->width = cctx->width;
@@ -53,8 +51,8 @@ H264Encoder::H264Encoder()
 	m_codec_context->max_b_frames = 2;
 	m_codec_context->gop_size = 5;
 	m_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
-	m_codec_context->width = 640;
-	m_codec_context->height = 480;
+	m_codec_context->width = 480;
+	m_codec_context->height = 320;
 
 	av_opt_set(m_codec_context->priv_data, "preset", "ultrafast", 0);
 
@@ -68,8 +66,6 @@ H264Encoder::H264Encoder()
 
 bool H264Encoder::Encode(const cv::Mat & frame)
 {
-	int result = -1;
-
 	AVFrame *m_avFrame = CreateAVFrameFromMat(&m_swsContext, &m_codec_context, frame);
 
 	AVPacket packet;

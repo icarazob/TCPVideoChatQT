@@ -14,7 +14,7 @@ private:
 
 public:
 
-	FaceLandmarkDetector(std::string appPath);
+	explicit FaceLandmarkDetector(std::string appPath);
 
 	void ProcessInternal(cv::Mat& frame) override;
 

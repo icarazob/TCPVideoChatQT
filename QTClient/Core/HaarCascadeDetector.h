@@ -10,7 +10,7 @@ class HaarCascadeDetector: public Detector
 private:
 	void DrawRect(cv::Mat& frame, cv::Rect rectangle, double scaleWidth, double scaleHeight);
 public:
-	HaarCascadeDetector(std::string appPath);
+	explicit HaarCascadeDetector(std::string appPath);
 
 	virtual void ProcessInternal(cv::Mat& frame) override;
 

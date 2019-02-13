@@ -33,15 +33,15 @@ SettingsWindowController::~SettingsWindowController()
 
 void SettingsWindowController::HoGSelectedSlot()
 {
-	ChangeDetectorSignal(int(DetectorType::HoG));
+	Q_EMIT ChangeDetectorSignal(int(DetectorType::HoG));
 }
 
 void SettingsWindowController::FaceLandmarkSelectedSlot()
 {
-	ChangeDetectorSignal(int(DetectorType::FaceLandmark));
+	Q_EMIT ChangeDetectorSignal(int(DetectorType::FaceLandmark));
 }
 
 void SettingsWindowController::HaarCascadeSelectedSlot()
 {
-	ChangeDetectorSignal(int(DetectorType::Haar));
+	Q_EMIT ChangeDetectorSignal(int(DetectorType::Haar));
 }

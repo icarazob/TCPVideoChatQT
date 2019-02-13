@@ -163,11 +163,9 @@ void LoginWindow::exit()
 	m_port = ui->portLineEdit->text();
 	m_name = ui->nameLineEdit->text();
 
-	
 	if (CheckOnValidInputData())
 	{
-		m_client.reset();
-		m_client = nullptr;
+		m_client.reset(nullptr);
 
 		m_client = std::make_unique<TCPClient>(m_port.split(" ")[0].toInt(), m_ip.toUtf8().constData(), m_name.toUtf8().constData());
 
@@ -180,6 +178,7 @@ void LoginWindow::exit()
 		else
 		{
 			m_status = false;
+
 			if (m_client->IsSameName())
 			{
 				ui->connectLabel->setText("Client with the same name exist!");

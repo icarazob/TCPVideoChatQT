@@ -193,7 +193,6 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 		const int c_widthNativeLabel = nativeLabelSize.width();
 		const int c_heightNativeLabel = nativeLabelSize.height();
 
-
 		m_videoCapture->open(m_appPath.toStdString() + "/Face.avi");
 
 		if (!m_videoCapture->isOpened())
@@ -216,8 +215,6 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 
 			cv::Mat resizedFrame;
 			cv::resize(frame, resizedFrame, cv::Size(c_widthLabel, c_heightLabel));
-
-			//Compress to .png extension
 
 			if (m_encoder->Encode(resizedFrame))
 			{

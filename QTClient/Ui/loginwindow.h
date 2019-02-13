@@ -27,7 +27,6 @@ public:
     explicit LoginWindow(QMainWindow *parent = 0);
 	~LoginWindow();
 
-
 	QString GetClientIp();
 	QString GetClientPort();
 	QString GetClientName();

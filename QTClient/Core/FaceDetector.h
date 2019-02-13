@@ -12,7 +12,7 @@ namespace cv {
 class FaceDetector: public Detector
 {
 public:
-	FaceDetector(std::string appPath);
+	explicit FaceDetector(std::string appPath);
 
 	void ProcessInternal(cv::Mat& frame) override;
 

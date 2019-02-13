@@ -177,8 +177,6 @@ void TCPClient::RecieveMessage()
 
 	delete[]buffer;
 	//Append Message
-
-
 	//std::cout << buffer << std::endl;
 	
 	return;
@@ -289,7 +287,7 @@ void TCPClient::ProcessFrameThread()
 				m_faceDetector->Process(m_currentFrame);
 			}
 
-			recieveEventFrame();
+			Q_EMIT recieveEventFrame();
 			m_queueFrames->pop_front();
 		}
 		
@@ -397,7 +395,7 @@ void TCPClient::SendFrame(std::vector<uchar> buffer)
 	//send frame
 	int resultFrame = send(m_connection,(char*)buffer.data(), bufferSize, NULL);
 
-	if (resultInt == SOCKET_ERROR)
+	if (resultFrame == SOCKET_ERROR)
 	{
 		qDebug() << "SendFrame: error send frame";
 		return;
@@ -432,7 +430,7 @@ void TCPClient::SendFrame(std::vector<uint8_t> data, int size)
 	//send frame
 	int resultFrame = send(m_connection,reinterpret_cast<char*>(data.data()), bufferSize, NULL);
 
-	if (resultInt == SOCKET_ERROR)
+	if (resultFrame == SOCKET_ERROR)
 	{
 		qDebug() << "SendFrame: error send frame";
 		return;
@@ -443,7 +441,6 @@ void TCPClient::SendFrame(std::vector<uint8_t> data, int size)
 
 void TCPClient::SendAudio(QByteArray buffer, int length)
 {
-
 	std::lock_guard<std::mutex> lock(m_mutex);
 
 	PacketType packet = PacketType::P_AudioMessage;
@@ -455,14 +452,12 @@ void TCPClient::SendAudio(QByteArray buffer, int length)
 		return;
 	}
 
-
 	int resultInt = send(m_connection, (char*)&length, sizeof(int), NULL);
 	if (resultInt == SOCKET_ERROR)
 	{
 		qDebug() << "SendAudio: error send size";
 		return;
 	}
-
 
 	int resultData = send(m_connection,buffer.data(), length, NULL);
 	if (resultData == SOCKET_ERROR)
@@ -605,32 +600,17 @@ void TCPClient::ChangeDetector(int type)
 	{
 	case DetectorType::HoG:
 		std::thread([this] {
-			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
-			m_faceDetectorRun = false;
-			m_faceDetector.reset(nullptr);
-			m_faceDetector = std::make_unique<FaceDetector>(m_path.toStdString());
-			m_faceDetectorRun = true;
-			return;
+			ResetDetector<FaceDetector>();
 		}).detach();
 		break;
 	case DetectorType::FaceLandmark:
 		std::thread([this] {
-			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
-			m_faceDetectorRun = false;
-			m_faceDetector.reset(nullptr);
-			m_faceDetector = std::make_unique<FaceLandmarkDetector>(m_path.toStdString());
-			m_faceDetectorRun = true; 
-			return;
+			ResetDetector<FaceLandmarkDetector>();
 		}).detach();
 		break;
 	case DetectorType::Haar:
 		std::thread([this] {
-			std::lock_guard<std::mutex> lock(m_frameThreadMutex);
-			m_faceDetectorRun = false;
-			m_faceDetector.reset(nullptr);
-			m_faceDetector = std::make_unique<HaarCascadeDetector>(m_path.toStdString());
-			m_faceDetectorRun = true;
-			return;
+			ResetDetector<HaarCascadeDetector>();
 		}).detach();
 		break;
 	default:
@@ -640,10 +620,17 @@ void TCPClient::ChangeDetector(int type)
 
 void TCPClient::CloseDetector()
 {
+	ResetDetector<Detector>();
+	return;
+}
+
+template<typename type>
+inline void TCPClient::ResetDetector()
+{
 	std::lock_guard<std::mutex> lock(m_frameThreadMutex);
 	m_faceDetectorRun = false;
 	m_faceDetector.reset(nullptr);
-	m_faceDetector = std::make_unique<Detector>(m_path.toStdString());
+	m_faceDetector = std::make_unique<type>(m_path.toStdString());
 	m_faceDetectorRun = true;
 	return;
 }
