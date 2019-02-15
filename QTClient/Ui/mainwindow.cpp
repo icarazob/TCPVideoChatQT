@@ -17,7 +17,7 @@
 #include "ListItem.h"
 
 
-MainWindow::MainWindow(QMainWindow *parent):
+MainWindow::MainWindow(QMainWindow *parent) :
 	QMainWindow(parent),
 	ui(new Ui::MainWindow),
 	m_notification(std::make_unique<PopUpNotification>()),
@@ -30,12 +30,10 @@ MainWindow::MainWindow(QMainWindow *parent):
 	ui->listWidget->setSpacing(0);
 	ui->listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	ui->listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-	ui->listWidget->setStyleSheet("border: 0px;"
-								  "background: #fff;");
-
-	auto *scrollBar= ui->listWidget->verticalScrollBar();
-
-
+	ui->listWidget->setStyleSheet("QListWidget{border: 0px;"
+		"background: #fff;"
+		"padding-bottom: 20px;"
+		"}");
 	
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
@@ -150,6 +148,7 @@ void MainWindow::StartVideoStream()
 	ui->stopVideoButton->setEnabled(true);
 
 	StartShowVideo();
+	UpdateNativeLabel();
 	
 	TurnVideoSignal(true);
 	
@@ -309,6 +308,9 @@ void MainWindow::AddItemToList(QString text, bool isClientMessage)
 	itemList->setSizeHint(QSize(ui->listWidget->width()-15, item->height()));
 	ui->listWidget->addItem(itemList);
 	ui->listWidget->setItemWidget(itemList, item);
+	
+	//scroll to bottom
+	ui->listWidget->scrollToBottom();
 }
 
 void MainWindow::ChangeMicrophoneIcon(bool status)
@@ -396,12 +398,17 @@ void MainWindow::SetupIcons()
 
 void MainWindow::SetupElements()
 {
-	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this, ui->label->geometry().bottomRight());
-	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
-
 	ui->plainTextForSend->installEventFilter(this);
 
+	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this, ui->label->geometry().bottomRight());
+
 	ui->label->setVisible(false);
+}
+
+void MainWindow::UpdateNativeLabel()
+{
+	m_nativeFrameLabel->SetPosition(ui->label->geometry().center());
+	m_nativeFrameLabel->SetBoundaries(ui->label->geometry().topLeft(), ui->label->geometry().bottomRight());
 }
 
 void MainWindow::PlayNotificationSound(QString path)
@@ -425,7 +432,6 @@ bool MainWindow::FileExist(QString path)
 
 void MainWindow::resizeEvent(QResizeEvent * event)
 {
-	std::cout << "Yes" << std::endl;
 	int count = ui->listWidget->count();
 
 	for (int i = 0; i < count; ++i)
@@ -433,4 +439,6 @@ void MainWindow::resizeEvent(QResizeEvent * event)
 		auto *curItem = ui->listWidget->item(i);
 		curItem->setSizeHint(QSize(ui->listWidget->width() - 15, curItem->sizeHint().height()));
 	}
+
+	this->UpdateNativeLabel();
 }

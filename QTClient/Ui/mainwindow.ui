@@ -37,7 +37,7 @@
    <bool>false</bool>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:1 rgba(205, 205, 205, 241));</string>
+   <string notr="true">background-color: #FFFFFF;</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -479,7 +479,7 @@ background-color: #fff;
                  </font>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);
+                 <string notr="true">background-color: #F1F1F4;
 border-color: rgb(0, 0, 255);
 border-radius: 10px;</string>
                 </property>

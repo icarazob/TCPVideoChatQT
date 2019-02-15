@@ -17,10 +17,6 @@ void ListItem::SetText(QString text, bool isLeft)
 	m_plainTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	m_plainTextEdit->setReadOnly(true);
 
-
-	m_plainTextEdit->setStyleSheet("border-radius: 5%;"
-								   "background-color: #DEC79B;");
-
 	QFont font;
 	QFontMetrics metric(font);
 
@@ -28,7 +24,7 @@ void ListItem::SetText(QString text, bool isLeft)
 
 	if (length < 200)
 	{
-		m_plainTextEdit->setFixedSize(QSize(length + 5, (metric.height() + 10)));
+		m_plainTextEdit->setFixedSize(QSize(length + 15, (metric.height() + 10)));
 	}
 	else
 	{
@@ -46,11 +42,17 @@ void ListItem::SetText(QString text, bool isLeft)
 	{
 		mainLayout->addWidget(m_plainTextEdit);
 		mainLayout->addStretch(1);
+
+		m_plainTextEdit->setStyleSheet("border-radius: 5%;"
+			"background-color: #F1F1F4;");
 	}
 	else
 	{
 		mainLayout->addStretch(1);
 		mainLayout->addWidget(m_plainTextEdit);
+
+		m_plainTextEdit->setStyleSheet("border-radius: 5%;"
+			"background-color: #DEC79B ;");
 	}
 
 	mainLayout->setSpacing(0);

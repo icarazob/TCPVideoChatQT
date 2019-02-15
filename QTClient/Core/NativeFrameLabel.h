@@ -19,6 +19,7 @@ public:
 	QSize GetSize() const;
 
 	void SetBoundaries(QPoint topLeftBorder,QPoint bottomRightBorder);
+	void SetPosition(QPoint pos);
 	void Clear();
 	void SetVisibleLabel(bool visibility);
 public slots:

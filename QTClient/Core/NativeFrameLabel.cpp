@@ -150,6 +150,11 @@ void NativeFrameLabel::SetBoundaries(QPoint topLeftBorder, QPoint bottomRightBor
 	m_bottomRightBorder = bottomRightBorder;
 }
 
+void NativeFrameLabel::SetPosition(QPoint pos)
+{
+	m_nativeLabel->move(pos);
+}
+
 void NativeFrameLabel::Clear()
 {
 	m_nativeLabel->clear();

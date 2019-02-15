@@ -22,7 +22,7 @@ class MainWindow :public QMainWindow
 {
     Q_OBJECT
 private:
-
+	void UpdateNativeLabel();
 	bool eventFilter(QObject *watched, QEvent *event);
 
 	void AddItemToList(QString text, bool isClientMessage);
