@@ -6,6 +6,7 @@ set(SOURCES
 	PopUpNotification.cpp
 	DialogAboutProgrammName.cpp
 	settingswindow.cpp
+	ListItem.cpp
 )
 
 set(HEADERS
@@ -14,6 +15,7 @@ set(HEADERS
 	PopUpNotification.h
 	DialogAboutProgrammName.h
 	settingswindow.h
+	ListItem.h
 )
 
 set(UI_FILES

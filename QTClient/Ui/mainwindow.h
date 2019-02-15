@@ -25,16 +25,18 @@ private:
 
 	bool eventFilter(QObject *watched, QEvent *event);
 
+	void AddItemToList(QString text, bool isClientMessage);
 	void ChangeMicrophoneIcon(bool status);
 	void GetHistoryWithClient(std::string clientName);
 	void ClearPlainText();
-
+	
 
 	void SetupIcons();
 	void SetupElements();
 	void PlayNotificationSound(QString path);
 	bool FileExist(QString path);
 
+	void resizeEvent(QResizeEvent *event);
 public:
     explicit MainWindow(QMainWindow *parent = nullptr);
 

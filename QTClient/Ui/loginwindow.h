@@ -44,7 +44,6 @@ private:
 	QString m_name;
 	bool m_status = false;
 
-
 	std::unique_ptr<TCPClient> m_client;
 
 public slots:

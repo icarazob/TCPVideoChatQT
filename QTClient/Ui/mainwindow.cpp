@@ -13,8 +13,9 @@
 #include <QSound>
 #include <QFileInfo>
 #include <opencv2\opencv.hpp>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QScrollBar>
+#include "ListItem.h"
+
 
 MainWindow::MainWindow(QMainWindow *parent):
 	QMainWindow(parent),
@@ -23,16 +24,26 @@ MainWindow::MainWindow(QMainWindow *parent):
 	m_stopShowVideo(true)
 {
 	ui->setupUi(this);
-	ui->label->setVisible(false);
-	ui->plainTextEdit->setMinimumHeight(300);
+
+	ui->listWidget->setSelectionMode(QAbstractItemView::NoSelection);
+	ui->listWidget->setFocusPolicy(Qt::NoFocus);
+	ui->listWidget->setSpacing(0);
+	ui->listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	ui->listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+	ui->listWidget->setStyleSheet("border: 0px;"
+								  "background: #fff;");
+
+	auto *scrollBar= ui->listWidget->verticalScrollBar();
+
+
 	
 	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
-	QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
 	QObject::connect(ui->menuAbout, SIGNAL(aboutToShow()), SIGNAL(AboutClickedSignal()));
 	QObject::connect(ui->settingsButton, SIGNAL(clicked()), SIGNAL(SettingsClickedSignal()));
+	//QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
 
 	SetupElements();
 
@@ -86,7 +97,7 @@ void MainWindow::ShowFrameOnNativeLabel(const cv::Mat& frame)
 void MainWindow::StartShowVideo()
 {
 	m_stopShowVideo = false;
-	ui->plainTextEdit->setMinimumHeight(150);
+	ui->listWidget->setMinimumHeight(150);
 	ui->label->setVisible(true);
 	//ui->plainTextEdit->setGeometry(280, 480, 761, 200);
 }
@@ -100,7 +111,7 @@ void MainWindow::UpdatePlain()
 		//Send message
 		SendMessageSignal(lineText);
 
-		ui->plainTextEdit->appendPlainText("You: " + lineText);
+		this->AddItemToList(lineText, false);
 
 		//clear plainTextForSend
 		ui->plainTextForSend->clear();
@@ -130,7 +141,7 @@ void MainWindow::UpdatePlainText(QString message)
 	m_notification->Show(QString::fromStdString(nameOfClient), QString::fromStdString(messageOfClient));
 
 	//Add message
-	ui->plainTextEdit->appendPlainText(message);
+	this->AddItemToList(message, true);
 }
 
 void MainWindow::StartVideoStream()
@@ -225,7 +236,6 @@ void MainWindow::UpdateList(QString listOfClients)
 }
 void MainWindow::ListItemClicked()
 {
-
 	static QListWidgetItem *previousItem = new QListWidgetItem();
 	previousItem->setBackgroundColor(Qt::white);
 	
@@ -290,6 +300,17 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 }
 
 
+void MainWindow::AddItemToList(QString text, bool isClientMessage)
+{
+	ListItem *item = new ListItem();
+	item->SetText(text, isClientMessage);
+
+	QListWidgetItem *itemList = new QListWidgetItem(ui->listWidget);
+	itemList->setSizeHint(QSize(ui->listWidget->width()-15, item->height()));
+	ui->listWidget->addItem(itemList);
+	ui->listWidget->setItemWidget(itemList, item);
+}
+
 void MainWindow::ChangeMicrophoneIcon(bool status)
 {
 	QIcon icon;
@@ -328,7 +349,7 @@ void MainWindow::GetHistoryWithClient(std::string clientName)
 
 void MainWindow::ClearPlainText()
 {
-	ui->plainTextEdit->clear();
+	//ui->plainTextEdit->clear();
 }
 
 void MainWindow::SetupIcons()
@@ -399,5 +420,17 @@ bool MainWindow::FileExist(QString path)
 	else
 	{
 		return false;
+	}
+}
+
+void MainWindow::resizeEvent(QResizeEvent * event)
+{
+	std::cout << "Yes" << std::endl;
+	int count = ui->listWidget->count();
+
+	for (int i = 0; i < count; ++i)
+	{
+		auto *curItem = ui->listWidget->item(i);
+		curItem->setSizeHint(QSize(ui->listWidget->width() - 15, curItem->sizeHint().height()));
 	}
 }

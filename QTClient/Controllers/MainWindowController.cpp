@@ -20,7 +20,7 @@ MainWindowController::MainWindowController(QString path) :
 	m_tcpClient(nullptr),
 	m_appPath(path),
 	m_audioProcesscor(std::make_unique<AudioProcessor>()),
-	m_videoCapture(std::make_unique<cv::VideoCapture>(m_appPath.toStdString() + "/Face.avi"))
+	m_videoCapture(std::make_unique<cv::VideoCapture>())
 {
 	m_settingsView = new SettingsWindow();
 	m_settingsWindowController = std::make_unique<SettingsWindowController>(path);

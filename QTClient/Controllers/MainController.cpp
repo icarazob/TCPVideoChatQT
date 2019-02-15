@@ -20,7 +20,7 @@ void MainController::SetView(LoginWindow * loginWindow)
 void MainController::Start()
 {
 	m_loginWindow->show();
-	m_loginWindow->adjustSize();
+	//m_loginWindow->adjustSize();
 }
 
 MainController::MainController(QObject *parent) :
@@ -48,5 +48,4 @@ void MainController::ShowMainWindow()
 
 	m_mainWindow->show();
 	m_mainWindow->adjustSize();
-
 }
