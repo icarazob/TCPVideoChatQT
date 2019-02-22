@@ -23,10 +23,15 @@ public:
 		void ShowMainWindow();
 
 private:
+
+	void Initialize(LoginWindow *loginWindow);
+
 	LoginWindow *m_loginWindow;
 	MainWindow  *m_mainWindow;
 
 	std::unique_ptr<TCPClient> m_tcpClient;
 	std::unique_ptr<MainWindowController> m_mainWindowController;
+
+	QString m_appPath;
 };
 

@@ -11,7 +11,7 @@ void MainController::SetView(LoginWindow * loginWindow)
 	Q_ASSERT(loginWindow);
 	Q_ASSERT(loginWindow->GetMainWindow());
 
-	m_loginWindow = loginWindow;
+	Initialize(loginWindow);
 	m_mainWindow = loginWindow->GetMainWindow();
 
 	QObject::connect(m_loginWindow, &LoginWindow::ClientConnected, this, &MainController::ShowMainWindow);
@@ -20,23 +20,29 @@ void MainController::SetView(LoginWindow * loginWindow)
 void MainController::Start()
 {
 	m_loginWindow->show();
-	//m_loginWindow->adjustSize();
 }
 
-MainController::MainController(QObject *parent) :
+MainController::MainController(QObject *parent):
 	QObject(parent),
 	m_loginWindow(nullptr),
 	m_mainWindow(nullptr),
 	m_tcpClient(nullptr),
 	m_mainWindowController(nullptr)
 {
-	QString appPath = QCoreApplication::applicationDirPath();
-	m_mainWindowController = std::make_unique<MainWindowController>(appPath);
+	m_appPath = QCoreApplication::applicationDirPath();
+	m_mainWindowController = std::make_unique<MainWindowController>(m_appPath);
 }
 
 MainController::~MainController()
 {
 
+}
+
+void MainController::Initialize(LoginWindow * loginWindow)
+{
+	m_loginWindow = loginWindow;
+	m_loginWindow->SetAppPath(m_appPath);
+	m_loginWindow->SetIcon();
 }
 
 void MainController::ShowMainWindow()

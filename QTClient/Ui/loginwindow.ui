@@ -33,10 +33,10 @@ color: #34421E;</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: #58E000;
-border-radius: 2px;
+    <string notr="true">background-color:#E60936;
+border-radius: 5px;
 color: #fff;
-font-size: 12px;
+font-size: 14px;
 </string>
    </property>
    <property name="text">
@@ -58,6 +58,7 @@ font-size: 12px;
       <property name="styleSheet">
        <string notr="true">color: #040F3D;
 font-size: 12px;
+font-weight: bold;
 </string>
       </property>
       <property name="text">
@@ -68,7 +69,8 @@ font-size: 12px;
     <item>
      <widget class="QLabel" name="label">
       <property name="styleSheet">
-       <string notr="true">font-size: 12px;</string>
+       <string notr="true">font-size: 12px;
+font-weight: bold;</string>
       </property>
       <property name="text">
        <string>IP</string>
@@ -78,7 +80,8 @@ font-size: 12px;
     <item>
      <widget class="QLabel" name="label_3">
       <property name="styleSheet">
-       <string notr="true">font-size: 12px;</string>
+       <string notr="true">font-size: 12px;
+font-weight: bold;</string>
       </property>
       <property name="text">
        <string>Name</string>
@@ -113,7 +116,7 @@ background-color: #DEC79B;
 }
 
 QLineEdit:focus{
-border: 1px solid #39c;
+border: 2px solid #39c;
 }</string>
       </property>
      </widget>
@@ -134,7 +137,7 @@ background-color: #DEC79B;
 }
 
 QLineEdit:focus{
-border: 1px solid #39c;
+border: 2px solid #39c;
 }</string>
       </property>
      </widget>
@@ -155,7 +158,7 @@ background-color: #DEC79B;
 }
 
 QLineEdit:focus{
-border: 1px solid #39c;
+border: 2px solid #39c;
 }</string>
       </property>
      </widget>

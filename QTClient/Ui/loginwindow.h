@@ -31,9 +31,12 @@ public:
 	QString GetClientPort();
 	QString GetClientName();
 	bool GetStatus();
-
 	MainWindow* GetMainWindow() const;
 	std::unique_ptr<TCPClient> GetTCPClient();
+
+	void SetAppPath(QString path);
+	void SetIcon();
+
 Q_SIGNALS:
 	void ClientConnected();
 private:
@@ -42,6 +45,7 @@ private:
 	QString m_ip;
 	QString m_port;
 	QString m_name;
+	QString m_appPath;
 	bool m_status = false;
 
 	std::unique_ptr<TCPClient> m_client;

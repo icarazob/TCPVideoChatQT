@@ -58,6 +58,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
 	QObject::connect(ui->haarRadioButton, SIGNAL(clicked()), SLOT(HaarCasscadeSlot()));
 	QObject::connect(ui->hogRadioButton, SIGNAL(clicked()),SLOT(HoGSlot()));
 	QObject::connect(ui->faceLandmarkRadioButton, SIGNAL(clicked()), SLOT(FaceLandmarkSlot()));

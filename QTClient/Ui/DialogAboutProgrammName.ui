@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>343</width>
-    <height>219</height>
+    <width>249</width>
+    <height>156</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>343</width>
-    <height>219</height>
+    <width>249</width>
+    <height>156</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>About</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">

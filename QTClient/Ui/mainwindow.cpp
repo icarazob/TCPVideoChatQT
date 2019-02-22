@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "Core/NativeFrameLabel.h"
 #include "PopUpNotification.h"
+#include "ListItem.h"
 #include <QString>
 #include <qpixmap.h>
 #include <qimage.h>
@@ -13,8 +14,6 @@
 #include <QSound>
 #include <QFileInfo>
 #include <opencv2\opencv.hpp>
-#include <QScrollBar>
-#include "ListItem.h"
 
 
 MainWindow::MainWindow(QMainWindow *parent) :
@@ -30,12 +29,10 @@ MainWindow::MainWindow(QMainWindow *parent) :
 	ui->listWidget->setSpacing(0);
 	ui->listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	ui->listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-	ui->listWidget->setStyleSheet("QListWidget{border: 0px;"
-		"background: #fff;"
-		"padding-bottom: 20px;"
-		"}");
-	
-	QObject::connect(ui->sendButton, SIGNAL(clicked()), SLOT(UpdatePlain()));
+	ui->listWidget->setVerticalScrollBar(this->GetScrollBar());
+
+	ui->plainTextForSend->setVerticalScrollBar(this->GetScrollBar());
+
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
@@ -43,7 +40,7 @@ MainWindow::MainWindow(QMainWindow *parent) :
 	QObject::connect(ui->settingsButton, SIGNAL(clicked()), SIGNAL(SettingsClickedSignal()));
 	//QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
 
-	SetupElements();
+	this->SetupElements();
 
 	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel.get(), SLOT(ChangedCondition(bool)));
 }
@@ -61,11 +58,20 @@ QSize MainWindow::GetNativeLabelSize() const
 void MainWindow::SetNameLabel(QString name)
 {
 	ui->nameLabel->setText(name);
+
+	//set image label
+	this->SetImageLabel(name.at(0));
+}
+
+void MainWindow::SetImageLabel(const QChar character)
+{
+	ui->imageLabel->setText(character);
 }
 
 void MainWindow::SetAppPath(QString path)
 {
 	m_path = path;
+	m_soundPath = m_path + "/sound/message.wav";
 
 	SetupIcons();
 }
@@ -118,7 +124,7 @@ void MainWindow::UpdatePlain()
 void MainWindow::UpdatePlainText(QString message)
 {
 	//Alarm
-	PlayNotificationSound(m_path + "/sound/message.wav");
+	PlayNotificationSound(m_soundPath);
 
 	//Show notification
 	std::string nameOfClient, messageOfClient;
@@ -228,7 +234,7 @@ void MainWindow::UpdateList(QString listOfClients)
 
 	if (ui->clientsList->count() == 1)
 	{
-		ui->clientsList->item(0)->setBackgroundColor(Qt::green);
+		ui->clientsList->item(0)->setBackgroundColor(QColor("#F1F1F4"));
 	}
 
 	return;
@@ -250,7 +256,6 @@ void MainWindow::ListItemClicked()
 
 	//Get History
 	//GetHistoryWithClient(name.toStdString());
-
 }
 bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 {
@@ -259,8 +264,8 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 	static bool shiftPress = false;
 	static bool shiftRelease = true;
 
-	if (event->type() == QEvent::KeyPress) {
-
+	if (event->type() == QEvent::KeyPress) 
+	{
 		QKeyEvent* key = static_cast<QKeyEvent*>(event);
 		if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
 			if (shiftRelease)
@@ -269,7 +274,9 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 			}
 			else
 			{
-				ui->plainTextForSend->appendPlainText("\n");
+				auto text = ui->plainTextForSend->toPlainText();
+				ui->plainTextForSend->setPlainText(text + "\n");
+				ui->plainTextForSend->moveCursor(QTextCursor::End);
 			}
 
 			return true;
@@ -297,7 +304,6 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 
 	return false;
 }
-
 
 void MainWindow::AddItemToList(QString text, bool isClientMessage)
 {
@@ -441,4 +447,40 @@ void MainWindow::resizeEvent(QResizeEvent * event)
 	}
 
 	this->UpdateNativeLabel();
+}
+
+QScrollBar* MainWindow::GetScrollBar()
+{
+	QScrollBar* scrollBar = new QScrollBar();
+	scrollBar->setStyleSheet(
+		"QScrollBar:vertical {"
+		"background:white;"
+		"width: 8px;"
+		"padding-top: 5px;"
+		"}"
+		"QScrollBar::handle:vertical {"
+		"background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+		"stop: 0 rgb(190, 190, 190), stop: 0.5 rgb(190, 190, 190), stop:1 rgb(190, 190, 190));"
+		"min-height: 0px;"
+		"border-top: 4px;"
+		"border-bottom: 4px;"
+		"border-radius: 4px;"
+		"}"
+		"QScrollBar::add-line:vertical {"
+		"background: qlineargradient(x1:0, y1:0, x2:1, y2:0"
+		"stop: 0 rgb(190, 190, 190), stop: 0.5 rgb(190, 190, 190), stop:1 rgb(190, 190, s190));"
+		"height: 0px;"
+		"subcontrol-position: bottom;"
+		"subcontrol-origin: margin;"
+		"}"
+		"QScrollBar::sub-line:vertical {"
+		"background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+		"stop: 0 rgb(190, 190, 190), stop: 0.5 rgb(190, 190, 190), stop:1 rgb(190, 190, 190));"
+		"height: 0 px;"
+		"subcontrol-position: top;"
+		"subcontrol-origin: margin;"
+		"}"
+	);
+
+	return scrollBar;
 }

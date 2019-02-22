@@ -5,6 +5,7 @@
 #include <memory>
 #include <iostream>
 #include <QPOinter>
+#include <QScrollBar>
 
 namespace Ui {
 class MainWindow;
@@ -37,6 +38,11 @@ private:
 	bool FileExist(QString path);
 
 	void resizeEvent(QResizeEvent *event);
+
+	QScrollBar* GetScrollBar();
+
+	void SetImageLabel(const QChar character);
+
 public:
     explicit MainWindow(QMainWindow *parent = nullptr);
 
@@ -51,6 +57,7 @@ public:
 	QSize GetFrameLabelSize() const;
 	QSize GetNativeLabelSize() const;
 	void SetNameLabel(QString name);
+
 	void SetAppPath(QString path);
 
     ~MainWindow();
@@ -75,6 +82,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
 	QString m_path;
+	QString m_soundPath;
 	
 	std::unique_ptr<PopUpNotification> m_notification;
 	std::shared_ptr<NativeFrameLabel> m_nativeFrameLabel;

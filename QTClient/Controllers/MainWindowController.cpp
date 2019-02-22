@@ -238,7 +238,7 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 		return;
 	};
 }
-
+//delete method
 std::vector<uchar> MainWindowController::CompressFrame(const cv::Mat& frame)
 {
 	std::vector<uchar> data;

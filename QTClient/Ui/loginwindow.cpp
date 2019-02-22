@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QRegExpValidator>
 #include <QTimer>
+#include <QFileInfo>
 
 bool LoginWindow::CheckIp()
 {
@@ -131,6 +132,23 @@ MainWindow* LoginWindow::GetMainWindow() const
 std::unique_ptr<TCPClient> LoginWindow::GetTCPClient()
 {
 	return std::move(m_client);
+}
+
+void LoginWindow::SetAppPath(QString path)
+{
+	m_appPath = path;
+}
+
+void LoginWindow::SetIcon()
+{
+	QString windowIconPath = m_appPath + "/images/window-icon.png";
+
+	QFileInfo checkFile(windowIconPath);
+
+	if (checkFile.exists() && checkFile.isFile())
+	{
+		this->setWindowIcon(QIcon(windowIconPath));
+	}
 }
 
 bool LoginWindow::CheckOnValidInputData()
