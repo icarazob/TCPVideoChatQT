@@ -71,6 +71,7 @@ Q_SIGNALS:
 	void TurnVideoSignal(bool state);
 	void AboutClickedSignal();
 	void SettingsClickedSignal();
+	void WindowClosedSignal();
 
 public slots:
 	void UpdatePlain();

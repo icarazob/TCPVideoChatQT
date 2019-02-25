@@ -16,6 +16,7 @@ PopUpNotification::PopUpNotification() :
     ui(new Ui::PopUpNotification)
 {
     ui->setupUi(this);
+	ui->messageField->document()->setDocumentMargin(0);
 
 	setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowStaysOnTopHint | Qt::Popup);
 	SetGeometry();
@@ -39,6 +40,7 @@ PopUpNotification::~PopUpNotification()
 
 void PopUpNotification::SetFields(QString client, QString message)
 {
+	ui->userIcon->setText(client.at(0));
 	ui->nameLabel->setText(client);
-	ui->plainText->setPlainText(message);
+	ui->messageField->setPlainText(message);
 }

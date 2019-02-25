@@ -15,7 +15,7 @@ void SettingsWindowController::SetView(SettingsWindow * view)
 {
 	Q_ASSERT(view);
 
-	m_view = view;
+	Initialize(view);
 
 	QObject::connect(m_view, &SettingsWindow::HaarCascadeCheckSignal, this, &SettingsWindowController::HaarCascadeSelectedSlot);
 	QObject::connect(m_view, &SettingsWindow::HoGCheckSignal, this, &SettingsWindowController::HoGSelectedSlot);
@@ -39,6 +39,13 @@ void SettingsWindowController::HoGSelectedSlot()
 void SettingsWindowController::FaceLandmarkSelectedSlot()
 {
 	Q_EMIT ChangeDetectorSignal(int(DetectorType::FaceLandmark));
+}
+
+void SettingsWindowController::Initialize(SettingsWindow * settingsWindow)
+{
+	m_view = settingsWindow;
+
+	m_view->SetAppPath(m_appPath);
 }
 
 void SettingsWindowController::HaarCascadeSelectedSlot()

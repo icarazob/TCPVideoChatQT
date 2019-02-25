@@ -179,6 +179,35 @@ border: 2px solid #F1F1F4;
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="stopVideoButton">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QPushButton:hover{
+border: 2px solid #F1F1F4;
+}</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <selectedon>images/Stop.png</selectedon>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="audioButton">
             <property name="minimumSize">
              <size>
@@ -193,35 +222,6 @@ border: 2px solid #F1F1F4;
             </property>
             <property name="text">
              <string/>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>30</width>
-              <height>30</height>
-             </size>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="stopVideoButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">QPushButton:hover{
-border: 2px solid #F1F1F4;
-}</string>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="icon">
-             <iconset>
-              <selectedon>images/Stop.png</selectedon>
-             </iconset>
             </property>
             <property name="iconSize">
              <size>

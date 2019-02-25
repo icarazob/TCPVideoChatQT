@@ -108,6 +108,7 @@ std::function<void (void)> TCPClient::CreateProcessHandler()
 void TCPClient::CreateSocket()
 {
 	m_connection = socket(AF_INET, SOCK_STREAM, NULL);
+
 	if (m_connection == SOCKET_ERROR)
 	{
 		std::cout << "Can't create a socket" << GetLastError() << std::endl;
@@ -348,7 +349,7 @@ void TCPClient::SendMessage(std::string message)
 		return;
 	}
 
-	std::string tempName = m_name + ": ";
+	std::string tempName = m_name + ":";
 	std::string mesageWithName = message.insert(0, tempName);
 	int messageSize = (int)(mesageWithName.size());
 

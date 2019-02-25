@@ -8,6 +8,7 @@
 #include "Ui/DialogAboutProgrammName.h"
 #include "UI/settingswindow.h"
 #include <opencv2/highgui/highgui.hpp>
+#include <QDebug>
 
 
 #define __STDC_CONSTANT_MACROS

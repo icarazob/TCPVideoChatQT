@@ -28,6 +28,8 @@ private slots:
 
 private:
 
+	void Initialize(SettingsWindow * settingsWindow);
+
 	SettingsWindow *m_view;
 
 	QString m_appPath;

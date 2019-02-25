@@ -1,6 +1,6 @@
 #include "settingswindow.h"
 #include "ui_settingswindow.h"
-#include <iostream>
+#include <QFileInfo>
 
 
 void SettingsWindow::HoGSlot()
@@ -52,17 +52,35 @@ void SettingsWindow::GroupBoxClicked(bool state)
 	}
 }
 
+void SettingsWindow::SetIcon()
+{
+	QString windowIconPath = m_appPath + "/images/window-icon.png";
+
+	QFileInfo checkFile(windowIconPath);
+
+	if (checkFile.exists() && checkFile.isFile())
+	{
+		this->setWindowIcon(QIcon(windowIconPath));
+	}
+}
+
 SettingsWindow::SettingsWindow(QWidget *parent) :
 	QWidget(parent),
     ui(new Ui::SettingsWindow)
 {
     ui->setupUi(this);
 
-
 	QObject::connect(ui->haarRadioButton, SIGNAL(clicked()), SLOT(HaarCasscadeSlot()));
 	QObject::connect(ui->hogRadioButton, SIGNAL(clicked()),SLOT(HoGSlot()));
 	QObject::connect(ui->faceLandmarkRadioButton, SIGNAL(clicked()), SLOT(FaceLandmarkSlot()));
 	QObject::connect(ui->groupBox, SIGNAL(clicked(bool)), SLOT(GroupBoxClicked(bool)));
+}
+
+void SettingsWindow::SetAppPath(QString path)
+{
+	m_appPath = path;
+
+	this->SetIcon();
 }
 
 SettingsWindow::~SettingsWindow()

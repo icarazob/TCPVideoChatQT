@@ -14,6 +14,7 @@
 #include <QSound>
 #include <QFileInfo>
 #include <opencv2\opencv.hpp>
+#include <QDebug>
 
 
 MainWindow::MainWindow(QMainWindow *parent) :
@@ -39,6 +40,7 @@ MainWindow::MainWindow(QMainWindow *parent) :
 	QObject::connect(ui->menuAbout, SIGNAL(aboutToShow()), SIGNAL(AboutClickedSignal()));
 	QObject::connect(ui->settingsButton, SIGNAL(clicked()), SIGNAL(SettingsClickedSignal()));
 	//QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
+
 
 	this->SetupElements();
 
@@ -150,8 +152,8 @@ void MainWindow::UpdatePlainText(QString message)
 
 void MainWindow::StartVideoStream()
 {
-	ui->videoButton->setEnabled(false);
-	ui->stopVideoButton->setEnabled(true);
+	ui->videoButton->setVisible(false);
+	ui->stopVideoButton->setVisible(true);
 
 	StartShowVideo();
 	UpdateNativeLabel();
@@ -165,8 +167,8 @@ void MainWindow::StartVideoStream()
 
 void MainWindow::StopVideoStream()
 {
-	ui->videoButton->setEnabled(true);
-	ui->stopVideoButton->setEnabled(false);
+	ui->videoButton->setVisible(true);
+	ui->stopVideoButton->setVisible(false);
 
 	TurnVideoSignal(false);
 
@@ -409,6 +411,7 @@ void MainWindow::SetupElements()
 	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this, ui->label->geometry().bottomRight());
 
 	ui->label->setVisible(false);
+	ui->stopVideoButton->setVisible(false);
 }
 
 void MainWindow::UpdateNativeLabel()

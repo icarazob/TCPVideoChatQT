@@ -17,9 +17,13 @@ private slots:
 	void HoGSlot();
 	void FaceLandmarkSlot();
 	void GroupBoxClicked(bool state);
+	void SetIcon();
 
 public:
     explicit SettingsWindow(QWidget *parent = 0);
+
+	void SetAppPath(QString path);
+
     ~SettingsWindow();
 
 Q_SIGNALS:
@@ -32,6 +36,8 @@ Q_SIGNALS:
 private:
     Ui::SettingsWindow *ui;
 	QRadioButton *m_lastButton = nullptr;
+
+	QString m_appPath;
 };
 
 #endif // SETTINGSWINDOW_H
