@@ -18,11 +18,11 @@ namespace cv {
 class NativeFrameLabel;
 class PopUpNotification;
 
-
 class MainWindow :public QMainWindow
 {
     Q_OBJECT
 private:
+	void Initialize();
 	void UpdateNativeLabel();
 	bool eventFilter(QObject *watched, QEvent *event);
 
@@ -36,6 +36,7 @@ private:
 	void SetupElements();
 	void PlayNotificationSound(QString path);
 	bool FileExist(QString path);
+	void ChangeUserLogo();
 
 	void resizeEvent(QResizeEvent *event);
 
@@ -79,11 +80,15 @@ public slots:
 	void StopVideoStream();
 	void TurnAudio();
 	void ListItemClicked();
+	void SelectUserImage();
 
 private:
+
     Ui::MainWindow *ui;
 	QString m_path;
 	QString m_soundPath;
+	QString m_userImageStylesheet;
+	QString m_defaultUserLogo;
 	
 	std::unique_ptr<PopUpNotification> m_notification;
 	std::shared_ptr<NativeFrameLabel> m_nativeFrameLabel;

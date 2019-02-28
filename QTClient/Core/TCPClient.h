@@ -71,7 +71,7 @@ public:
 Q_SIGNALS:
 	void recieveEventMessage(QString message);
 	void recieveEventFrame();
-	void recieveEventAudio(QByteArray,int);
+	void recieveEventAudio(QByteArray);
 
 	void startShowVideo();
 	void stopShowVideo();

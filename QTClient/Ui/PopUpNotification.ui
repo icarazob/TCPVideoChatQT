@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>421</width>
-    <height>93</height>
+    <width>300</width>
+    <height>80</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>421</width>
-    <height>93</height>
+    <width>300</width>
+    <height>80</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>429</width>
-    <height>93</height>
+    <width>312</width>
+    <height>83</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -60,7 +60,7 @@
           <number>6</number>
          </property>
          <property name="bottomMargin">
-          <number>15</number>
+          <number>0</number>
          </property>
          <item>
           <spacer name="horizontalSpacer">
@@ -84,14 +84,14 @@
           <widget class="QLabel" name="userIcon">
            <property name="minimumSize">
             <size>
-             <width>70</width>
-             <height>70</height>
+             <width>60</width>
+             <height>60</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>50</width>
-             <height>50</height>
+             <width>60</width>
+             <height>60</height>
             </size>
            </property>
            <property name="font">
@@ -100,7 +100,7 @@
             </font>
            </property>
            <property name="styleSheet">
-            <string notr="true">border-radius: 35px;
+            <string notr="true">border-radius: 30px;
 background: #F1F1F4;
 text-transform: uppercase;
 font-size: 22px;</string>
@@ -133,27 +133,6 @@ font-size: 22px;</string>
          </item>
         </layout>
        </item>
-       <item>
-        <spacer name="verticalSpacer_2">
-         <property name="font">
-          <font>
-           <family>MS Shell Dlg 2</family>
-          </font>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Expanding</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
       </layout>
      </item>
      <item>
@@ -170,13 +149,13 @@ font-size: 22px;</string>
           <widget class="QLabel" name="nameLabel">
            <property name="minimumSize">
             <size>
-             <width>241</width>
+             <width>200</width>
              <height>25</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>16777215</width>
+             <width>200</width>
              <height>25</height>
             </size>
            </property>
@@ -268,13 +247,13 @@ font-size: 22px;</string>
           <widget class="QPlainTextEdit" name="messageField">
            <property name="minimumSize">
             <size>
-             <width>331</width>
+             <width>200</width>
              <height>50</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>331</width>
+             <width>300</width>
              <height>50</height>
             </size>
            </property>
@@ -335,7 +314,7 @@ background: #fff;</string>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>20</height>
           </size>
          </property>
         </spacer>

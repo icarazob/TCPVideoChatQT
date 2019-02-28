@@ -33,12 +33,11 @@ void MainWindowController::SetView(MainWindow * view)
 	Q_ASSERT(m_tcpClient);
 
 	Initialize(view);
-	SetClientInformation(m_tcpClient->GetClientInformation());
 
 	QObject::connect(m_tcpClient.get(), SIGNAL(stopShowVideo()), this, SLOT(ViewStopShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(startShowVideo()), this, SLOT(ViewStartShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(ViewUpdatePlainText(QString)));
-	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray, int)), SLOT(ProcessAudioData(QByteArray, int)));
+	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray)), SLOT(ProcessAudioData(QByteArray)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(updateList(QString)), SLOT(ViewUpdateList(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
 
@@ -67,6 +66,7 @@ MainWindowController::~MainWindowController()
 	if (m_tcpClient != nullptr)
 	{
 		m_tcpClient->StopThread();
+		m_audioProcesscor->StopThread();
 		TurnVideoSlot(false);
 		m_audioProcesscor->CloseInput();
 		SendInformationSlot(InformationStrings::StopVideo());
@@ -81,9 +81,9 @@ void MainWindowController::ViewUpdatePlainText(QString message)
 	m_view->UpdatePlainText(message);
 }
 
-void MainWindowController::ProcessAudioData(QByteArray data, int length)
+void MainWindowController::ProcessAudioData(QByteArray data)
 {
-	m_audioProcesscor->ProcessData(data, length);
+	m_audioProcesscor->AddToQueue(data);
 }
 
 void MainWindowController::ViewUpdateList(QString listOfClients)
@@ -253,8 +253,6 @@ void MainWindowController::SetClientInformation(std::tuple<std::string, std::str
 	m_clientInformation.name = std::get<0>(information);
 	m_clientInformation.ip = std::get<1>(information);
 	m_clientInformation.port = std::get<2>(information);
-
-	m_view->SetNameLabel(QString::fromStdString(m_clientInformation.name));
 }
 
 void MainWindowController::SendFrame(std::vector<uint8_t> data, int size)
@@ -284,9 +282,13 @@ void MainWindowController::ShowSettingsWidget()
 
 void MainWindowController::Initialize(MainWindow * view)
 {
+	this->SetClientInformation(m_tcpClient->GetClientInformation());
+
 	m_view = view;
 
+	m_view->SetNameLabel(QString::fromStdString(m_clientInformation.name));
 	m_view->SetAppPath(m_appPath);
+
 	m_tcpClient->SetAppPath(m_appPath);
 
 	m_aboutView = std::make_unique<DialogAboutProgrammName>(m_view);

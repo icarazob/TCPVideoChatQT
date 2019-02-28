@@ -30,7 +30,6 @@ void ListItem::SetText(QString text, bool isLeft)
 	{
 		auto nRows = length / 200;
 
-
 		m_plainTextEdit->setFixedSize(QSize(200, (metric.height() + 1) * (nRows + 1) + 10));
 	}
 
@@ -63,4 +62,5 @@ void ListItem::SetText(QString text, bool isLeft)
 
 ListItem::~ListItem()
 {
+
 }

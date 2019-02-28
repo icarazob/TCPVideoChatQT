@@ -12,6 +12,7 @@ void MainController::SetView(LoginWindow * loginWindow)
 	Q_ASSERT(loginWindow->GetMainWindow());
 
 	Initialize(loginWindow);
+
 	m_mainWindow = loginWindow->GetMainWindow();
 
 	QObject::connect(m_loginWindow, &LoginWindow::ClientConnected, this, &MainController::ShowMainWindow);

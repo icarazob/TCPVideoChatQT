@@ -13,6 +13,7 @@
 #include <string>
 #include <QSound>
 #include <QFileInfo>
+#include <QFileDialog>
 #include <opencv2\opencv.hpp>
 #include <QDebug>
 
@@ -25,26 +26,29 @@ MainWindow::MainWindow(QMainWindow *parent) :
 {
 	ui->setupUi(this);
 
-	ui->listWidget->setSelectionMode(QAbstractItemView::NoSelection);
-	ui->listWidget->setFocusPolicy(Qt::NoFocus);
-	ui->listWidget->setSpacing(0);
-	ui->listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	ui->listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-	ui->listWidget->setVerticalScrollBar(this->GetScrollBar());
-
-	ui->plainTextForSend->setVerticalScrollBar(this->GetScrollBar());
+	Initialize();
 
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(ui->menuAbout, SIGNAL(aboutToShow()), SIGNAL(AboutClickedSignal()));
 	QObject::connect(ui->settingsButton, SIGNAL(clicked()), SIGNAL(SettingsClickedSignal()));
-	//QObject::connect(ui->clientsList, SIGNAL(itemSelectionChanged()),SLOT(ListItemClicked()));
+	QObject::connect(ui->userImage, SIGNAL(clicked()), SLOT(SelectUserImage()));
+	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel.get(), SLOT(ChangedCondition(bool)));
+}
 
+void MainWindow::Initialize()
+{
+	ui->listWidget->setSelectionMode(QAbstractItemView::NoSelection);
+	ui->listWidget->setFocusPolicy(Qt::NoFocus);
+	ui->listWidget->setSpacing(0);
+	ui->listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	ui->listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+	ui->listWidget->setVerticalScrollBar(this->GetScrollBar());
+	ui->plainTextForSend->setVerticalScrollBar(this->GetScrollBar());
 
 	this->SetupElements();
-
-	QObject::connect(this, SIGNAL(videoStream(bool)), m_nativeFrameLabel.get(), SLOT(ChangedCondition(bool)));
 }
 
 QSize MainWindow::GetFrameLabelSize() const
@@ -60,22 +64,21 @@ QSize MainWindow::GetNativeLabelSize() const
 void MainWindow::SetNameLabel(QString name)
 {
 	ui->nameLabel->setText(name);
-
-	//set image label
-	this->SetImageLabel(name.at(0));
 }
 
 void MainWindow::SetImageLabel(const QChar character)
 {
-	ui->imageLabel->setText(character);
+	ui->userImage->setText(character);
 }
 
 void MainWindow::SetAppPath(QString path)
 {
 	m_path = path;
 	m_soundPath = m_path + "/sound/message.wav";
+	m_defaultUserLogo = m_path + "//images/user_logo.png";
 
-	SetupIcons();
+	this->SetupIcons();
+	this->ChangeUserLogo();
 }
 
 MainWindow::~MainWindow()
@@ -195,16 +198,17 @@ void MainWindow::TurnAudio()
 	m_lastStateAudioButton = !m_lastStateAudioButton;
 }
 
-
 void MainWindow::StopShowVideo()
 {
 	m_stopShowVideo = true;
 	ui->label->clear();
 }
+
 void MainWindow::ClearNativeFrameLabel()
 {
 	m_nativeFrameLabel->Clear();
 }
+
 void MainWindow::UpdateList(QString listOfClients)
 {
 	ui->clientsList->clear();
@@ -241,6 +245,7 @@ void MainWindow::UpdateList(QString listOfClients)
 
 	return;
 }
+
 void MainWindow::ListItemClicked()
 {
 	static QListWidgetItem *previousItem = new QListWidgetItem();
@@ -259,6 +264,27 @@ void MainWindow::ListItemClicked()
 	//Get History
 	//GetHistoryWithClient(name.toStdString());
 }
+
+void MainWindow::SelectUserImage()
+{
+	QString filename = QFileDialog::getOpenFileName(this, 
+		tr("Choose file"),
+		QDir::currentPath(),
+		tr("Images (*.png *.jpg);;All Files (*)"));
+
+	if (!filename.isNull())
+	{
+		//open Image
+		QImage userLogo;
+		userLogo.load(filename);
+
+		//save Image
+		userLogo.save(m_defaultUserLogo);
+
+		this->ChangeUserLogo();
+	}
+}
+
 bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 {
 	static bool enterPress = false;
@@ -266,8 +292,9 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 	static bool shiftPress = false;
 	static bool shiftRelease = true;
 
-	if (event->type() == QEvent::KeyPress) 
+	if(event->type() == QEvent::KeyPress) 
 	{
+
 		QKeyEvent* key = static_cast<QKeyEvent*>(event);
 		if ((key->key() == Qt::Key_Enter) || (key->key() == Qt::Key_Return)) {
 			if (shiftRelease)
@@ -406,8 +433,9 @@ void MainWindow::SetupIcons()
 
 void MainWindow::SetupElements()
 {
+	m_userImageStylesheet = ui->userImage->styleSheet();
 	ui->plainTextForSend->installEventFilter(this);
-
+	
 	m_nativeFrameLabel = std::make_shared<NativeFrameLabel>(this, ui->label->geometry().bottomRight());
 
 	ui->label->setVisible(false);
@@ -436,6 +464,21 @@ bool MainWindow::FileExist(QString path)
 	else
 	{
 		return false;
+	}
+}
+
+void MainWindow::ChangeUserLogo()
+{
+	if (FileExist(m_defaultUserLogo))
+	{
+		auto userImageStylesheet = m_userImageStylesheet + "\nborder-image:" + "url(" + m_defaultUserLogo + ");";
+
+		ui->userImage->setStyleSheet(userImageStylesheet);
+		ui->userImage->setText("");
+	}
+	else
+	{
+		this->SetImageLabel(ui->nameLabel->text().at(0));
 	}
 }
 
