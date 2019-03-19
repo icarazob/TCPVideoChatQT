@@ -160,7 +160,7 @@ namespace Server {
 		data = buffer;
 	}
 
-	void TCPServer::SendFrame(SOCKET client, std::vector<uchar> data)
+	bool TCPServer::SendFrame(SOCKET client, std::vector<uchar> data)
 	{
 		PacketType packet = P_FrameMessage;
 
@@ -168,7 +168,7 @@ namespace Server {
 		if (resultPacket == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send a packet message" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int imgSize = static_cast<int>(data.size());
@@ -178,7 +178,7 @@ namespace Server {
 		if (resultInt == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int result = send(client, (char*)data.data(), imgSize, NULL);
@@ -186,10 +186,10 @@ namespace Server {
 		if (result == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
-		//return;
+		return true;
 	}
 
 	bool TCPServer::ReceiveAudio(SOCKET client, char **buffer, int &length)
@@ -494,7 +494,7 @@ namespace Server {
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 
-				for (auto i = 0; i < m_clients.size(); i++)
+				for (size_t i = 0; i < m_clients.size(); i++)
 				{
 					if (m_clients[i] == client)
 					{
@@ -514,16 +514,19 @@ namespace Server {
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 
-				for (auto i = 0; i < m_clients.size(); i++)
+				for (size_t i = 0; i < m_clients.size(); i++)
 				{
 					if (m_clients[i] == client)
 					{
-						SendFrame(m_clients[i], data);
+						continue;
 					}
 
+					if (!SendFrame(m_clients[i], data))
+					{
+						break;
+					}
 				}
 
-				data.clear();
 			}
 			break;
 		}
@@ -533,7 +536,7 @@ namespace Server {
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 
-				for (int i = 0; i < m_clients.size(); i++)
+				for (size_t i = 0; i < m_clients.size(); i++)
 				{
 					if (m_clients[i] == client)
 					{
@@ -674,6 +677,11 @@ namespace Server {
 		//Delete name
 		m_names.erase(nameIt);
 
+		for (auto client : m_clients)
+		{
+			std::cout << client << std::endl;
+		}
+
 
 		return;
 	}
@@ -703,7 +711,7 @@ namespace Server {
 					return;
 				}
 
-				std::this_thread::sleep_for(std::chrono::microseconds(50));
+				std::this_thread::sleep_for(std::chrono::microseconds(10));
 			}
 		};
 	}

@@ -585,7 +585,7 @@ void TCPClient::RecieveAudio()
 	}
 
 	QByteArray	qBuffer = QByteArray(buffer, length);
-	Q_EMIT recieveEventAudio(qBuffer);
+	Q_EMIT recieveEventAudio(qBuffer, length);
 
 	delete []buffer;
 

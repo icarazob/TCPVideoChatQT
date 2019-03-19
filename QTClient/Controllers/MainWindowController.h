@@ -54,7 +54,7 @@ public:
 	void ViewShowFrame();
 	void ViewStartShowVideo();
 
-	void ProcessAudioData(QByteArray data);
+	void ProcessAudioData(QByteArray data, int length);
 	void TurnAudioSlot(bool state);
 	void TurnVideoSlot(bool state);
 	void ShowAboutWidget();

@@ -4,7 +4,6 @@
 #include <iostream>
 #include <QBuffer>
 #include <QEventLoop>
-#include <QDebug>
 
 void AudioProcessor::InitializeAudio()
 {
@@ -14,7 +13,7 @@ void AudioProcessor::InitializeAudio()
 	m_format.setCodec("audio/pcm");
 	m_format.setByteOrder(QAudioFormat::LittleEndian);
 	m_format.setSampleType(QAudioFormat::UnSignedInt);
-	
+
 	QAudioDeviceInfo infoIn(QAudioDeviceInfo::defaultInputDevice());
 	if (!infoIn.isFormatSupported(m_format))
 	{
@@ -69,26 +68,23 @@ void AudioProcessor::CreateAudioOutput()
 	m_audioOutput = new QAudioOutput(m_Outputdevice, m_format, this);
 }
 
-AudioProcessor::AudioProcessor():
+AudioProcessor::AudioProcessor() :
 	m_Inputdevice(QAudioDeviceInfo::defaultInputDevice())
 	, m_Outputdevice(QAudioDeviceInfo::defaultOutputDevice())
 	, m_audioInput(0)
 	, m_audioOutput(0)
 	, m_input(0)
 	, m_buffer(BufferSize, 0)
-	, m_terminating(false)
-	, m_queueBuffers(std::make_unique<SharedQueue<QByteArray>>())
 {
 	InitializeAudio();
 
 	m_output = m_audioOutput->start();
+
 	m_input = m_audioInput->start();
 
 	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
 
 	CloseInput();
-
-	m_thread = std::thread(&AudioProcessor::ProcessRoutine, this);
 }
 
 void AudioProcessor::CloseInput()
@@ -103,49 +99,18 @@ void AudioProcessor::StartInput()
 	connect(m_input, SIGNAL(readyRead()), SLOT(readMore()));
 }
 
-void AudioProcessor::StopThread()
-{
-	m_terminating = true;
-}
-
-void AudioProcessor::AddToQueue(QByteArray buffer)
-{
-	m_queueBuffers->push_back(buffer);
-}
-
-void AudioProcessor::ProcessData(QByteArray buffer)
+void AudioProcessor::ProcessData(QByteArray buffer, int length)
 {
 	if (!m_Outputdevice.isNull())
 	{
-		//if (m_output->isOpen())
-		//{
-		m_output->write(buffer.data(), buffer.size());
-		//}
+		if (m_output->isOpen())
+		{
+			m_output->write(buffer.data(), length);
+		}
 	}
 }
 
 AudioProcessor::~AudioProcessor()
 {
-	if (m_thread.joinable())
-	{
-		m_thread.join();
-	}
+
 }
-
-void AudioProcessor::ProcessRoutine()
-{
-	while (!m_terminating)
-	{
-		while (!m_queueBuffers->empty())
-		{
-			auto currentBuffer = m_queueBuffers->front();
-
-			this->ProcessData(currentBuffer);
-
-			m_queueBuffers->pop_front();
-		}
-	}
-}
-
-
-

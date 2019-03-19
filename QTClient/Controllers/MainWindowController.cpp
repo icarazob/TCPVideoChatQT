@@ -37,7 +37,7 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_tcpClient.get(), SIGNAL(stopShowVideo()), this, SLOT(ViewStopShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(startShowVideo()), this, SLOT(ViewStartShowVideo()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventMessage(QString)), this, SLOT(ViewUpdatePlainText(QString)));
-	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray)), SLOT(ProcessAudioData(QByteArray)));
+	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray, int)), SLOT(ProcessAudioData(QByteArray, int)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(updateList(QString)), SLOT(ViewUpdateList(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
 
@@ -66,9 +66,9 @@ MainWindowController::~MainWindowController()
 	if (m_tcpClient != nullptr)
 	{
 		m_tcpClient->StopThread();
-		m_audioProcesscor->StopThread();
 		TurnVideoSlot(false);
 		m_audioProcesscor->CloseInput();
+
 		SendInformationSlot(InformationStrings::StopVideo());
 
 		//To do
@@ -81,9 +81,9 @@ void MainWindowController::ViewUpdatePlainText(QString message)
 	m_view->UpdatePlainText(message);
 }
 
-void MainWindowController::ProcessAudioData(QByteArray data)
+void MainWindowController::ProcessAudioData(QByteArray data, int length)
 {
-	m_audioProcesscor->AddToQueue(data);
+	m_audioProcesscor->ProcessData(data, length);
 }
 
 void MainWindowController::ViewUpdateList(QString listOfClients)

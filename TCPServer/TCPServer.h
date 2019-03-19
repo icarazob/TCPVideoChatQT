@@ -35,7 +35,7 @@ namespace Server {
 		std::function<void(int)> CreateHandler();
 		void ShowServerInformation();
 		void RecieveFrame(SOCKET client, std::vector<uchar>& data);
-		void SendFrame(SOCKET client, std::vector<uchar> data);
+		bool SendFrame(SOCKET client, std::vector<uchar> data);
 		bool ReceiveAudio(SOCKET client, char **buffer, int &length);
 		void SendAudio(SOCKET client, char *buffer, int length);
 		bool ProcessInformationMessage(SOCKET client);
