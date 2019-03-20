@@ -373,7 +373,7 @@ namespace Server {
 
 	void TCPServer::SendClientsList()
 	{
-		SendAllInformationMessage("List");
+		this->SendAllInformationMessage("List");
 
 		std::string strList;
 		auto listOfClients = DB::GetInstance().SelectNameOfAllClients();
@@ -384,7 +384,7 @@ namespace Server {
 			strList.append(" ");
 		}
 
-		SendAllInformationMessage(strList);
+		this->SendAllInformationMessage(strList);
 	}
 
 	bool TCPServer::ReadSettings()
@@ -489,7 +489,7 @@ namespace Server {
 		{
 		case P_ChatMessage:
 		{
-			RecieveMessage(client, message);
+			this->RecieveMessage(client, message);
 
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
@@ -501,7 +501,7 @@ namespace Server {
 						continue;
 					}
 
-					SendMessage(m_clients[i], message);
+					this->SendMessage(m_clients[i], message);
 				}
 			}
 
@@ -509,19 +509,21 @@ namespace Server {
 		}
 		case P_FrameMessage:
 		{
-			RecieveFrame(client, data);
+			this->RecieveFrame(client, data);
 			if (!data.empty())
 			{
-				std::lock_guard<std::mutex> lock(m_mutex);
+
 
 				for (size_t i = 0; i < m_clients.size(); i++)
 				{
+					std::lock_guard<std::mutex> lock(m_mutex);
+
 					if (m_clients[i] == client)
 					{
 						continue;
 					}
 
-					if (!SendFrame(m_clients[i], data))
+					if (!this->SendFrame(m_clients[i], data))
 					{
 						break;
 					}
@@ -543,7 +545,7 @@ namespace Server {
 						continue;
 					}
 
-					SendAudio(m_clients[i], audio, length);
+					this->SendAudio(m_clients[i], audio, length);
 
 				}
 
@@ -631,6 +633,16 @@ namespace Server {
 		}
 	}
 
+	void TCPServer::SendAllMessage(const std::string message)
+	{
+		std::lock_guard<std::mutex> lock(m_mutex);
+
+		for (auto client : m_clients)
+		{
+			this->SendMessage(client, message);
+		}
+	}
+
 	bool TCPServer::RecieveMessage(SOCKET client, std::string & message)
 	{
 		int message_size = 0;
@@ -691,9 +703,12 @@ namespace Server {
 		return  [this](int clientNumber)
 		{
 			SOCKET client = 0;
+			std::string clientName;
+
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 				client = m_clients[clientNumber];
+				clientName = m_names[clientNumber];
 			}
 
 			//Create VideoThread
@@ -702,12 +717,18 @@ namespace Server {
 			{
 				PacketType packet;
 
-				if (!ProcessPacket(client, packet))
+				if (!this->ProcessPacket(client, packet))
 				{
 					std::cout << "Close Thread!" << std::endl;
-					DeleteClient(client);
 
-					SendClientsList();
+					this->DeleteClient(client);
+
+					::closesocket(client);
+
+					this->SendAllMessage(clientName + " is disconnected!");
+
+					this->SendClientsList();
+
 					return;
 				}
 
@@ -715,5 +736,4 @@ namespace Server {
 			}
 		};
 	}
-
 }

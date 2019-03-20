@@ -69,10 +69,10 @@ MainWindowController::~MainWindowController()
 		TurnVideoSlot(false);
 		m_audioProcesscor->CloseInput();
 
-		SendInformationSlot(InformationStrings::StopVideo());
+		//SendInformationSlot(InformationStrings::StopVideo());
 
 		//To do
-		m_tcpClient->SendMessageWithoutName(m_clientInformation.name + " is disconnected!");
+		//m_tcpClient->SendMessageWithoutName(m_clientInformation.name + " is disconnected!");
 	}
 }
 
@@ -153,18 +153,7 @@ void MainWindowController::TurnVideoSlot(bool state)
 
 void MainWindowController::ViewShowFrame()
 {
-	cv::Mat image = m_tcpClient->GetCurrentFrame();
-
-	if (!image.empty())
-	{
-		m_view->ShowFrame(image);
-	}
-	else
-	{
-		m_view->StopShowVideo();
-	}
-
-	return;
+	m_view->ShowFrame(m_tcpClient->GetCurrentFrame());
 }
 
 void MainWindowController::SendFrameSlot(std::vector<uchar> data)

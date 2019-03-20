@@ -30,6 +30,7 @@ namespace Server {
 		void SetupSockaddr();
 		void CreateBindListenSocket();
 		void SendMessage(SOCKET client, const std::string message);
+		void SendAllMessage(const std::string message);
 		bool RecieveMessage(SOCKET client, std::string &message);
 		void DeleteClient(SOCKET client);
 		std::function<void(int)> CreateHandler();
