@@ -29,4 +29,8 @@ public:
     {
         return "Connected";
     }
+	QString static MultipleMode()
+	{
+		return "Multiple mode";
+	}
 };

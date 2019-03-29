@@ -125,7 +125,11 @@ NativeFrameLabel::~NativeFrameLabel()
 
 void NativeFrameLabel::SetFrame(const cv::Mat& frame)
 {
-	m_nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
+	if (m_nativeLabel)
+	{
+		m_nativeLabel->setPixmap(QPixmap::fromImage(QImage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888)));
+	}
+
 	return;
 }
 

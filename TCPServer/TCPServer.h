@@ -22,10 +22,11 @@ namespace Server {
 			P_ChatMessage,
 			P_FrameMessage,
 			P_AudioMessage,
-			P_InformationMessage
+			P_InformationMessage,
+			P_FrameMultipleMessage
 		};
 
-		bool ProcessPacket(SOCKET client, PacketType &packet);
+		bool ProcessPacket(SOCKET client, PacketType &packet, std::string userName);
 		void InitializeWSA();
 		void SetupSockaddr();
 		void CreateBindListenSocket();
@@ -47,6 +48,7 @@ namespace Server {
 		void SendClientsList();
 		bool ReadSettings();
 		void SaveMessageHistoryOfClient(SOCKET client);
+		bool SendFrameMultipleMode(SOCKET client, std::vector<uchar> data, std::string userName);
 	public:
 		TCPServer();
 		explicit TCPServer(int port, const char *ip);
@@ -56,14 +58,21 @@ namespace Server {
 		~TCPServer();
 
 	private:
+		bool m_multipleMode = false;
+
 		WSADATA m_wsaData;
 		SOCKET m_listenSocket = 0;
 		std::vector<SOCKET> m_clients;
 		std::vector<std::string> m_names;
 		SOCKADDR_IN m_addr;
-		std::string m_ip;
+
 		std::mutex m_mutex;
-		int m_port = 5000;
+
 		QString m_applicationPath;
+		
+		int m_videoCounter = 0;
+
+		std::string m_ip;
+		int m_port = 5000;
 	};
 }

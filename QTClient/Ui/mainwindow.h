@@ -6,6 +6,8 @@
 #include <iostream>
 #include <QPOinter>
 #include <QScrollBar>
+#include <QLabel>
+#include <QMap>
 
 namespace Ui {
 class MainWindow;
@@ -54,12 +56,14 @@ public:
 	void UpdateList(QString listOfClients);
 	void StartShowVideo();
 	void ShowFrame(const cv::Mat &copyFrame);
+	void ShowFrameMultipleMode(const cv::Mat &copyFrame, QString labelName);
 	void ShowFrameOnNativeLabel(const cv::Mat& frame);
 	QSize GetFrameLabelSize() const;
 	QSize GetNativeLabelSize() const;
 	void SetNameLabel(QString name);
 
 	void SetAppPath(QString path);
+	void SetVisibleLabel(bool visibility);
 
     ~MainWindow();
 
@@ -92,6 +96,8 @@ private:
 	
 	std::unique_ptr<PopUpNotification> m_notification;
 	std::shared_ptr<NativeFrameLabel> m_nativeFrameLabel;
+
+	QMap<QString ,QLabel*> m_labels;
 
 	bool m_lastStateAudioButton = false;
 	bool m_stopShowVideo = false;

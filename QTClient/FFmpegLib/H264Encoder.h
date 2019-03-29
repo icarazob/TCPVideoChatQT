@@ -24,7 +24,8 @@ class H264Encoder
 {
 private:
 
-	AVFrame* CreateAVFrameFromMat(SwsContext **swsContext, AVCodecContext **outputCodecContext, const cv::Mat& image);
+	void CreateAVFrameFromMat(const cv::Mat& image);
+	void InitFrame();
 
 public:
 	explicit H264Encoder();
@@ -42,5 +43,6 @@ private:
 	AVCodecContext *m_codec_context = nullptr;
 	SwsContext* m_swsContext = nullptr;
 	std::vector<uint8_t> m_currentData;
+	AVFrame* m_frame;
 	int m_currentSize = 0;
 };

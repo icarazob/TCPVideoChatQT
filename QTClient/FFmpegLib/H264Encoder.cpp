@@ -1,30 +1,25 @@
 #include "H264Encoder.h"
 
-AVFrame * H264Encoder::CreateAVFrameFromMat(SwsContext ** swsContext, AVCodecContext ** outputCodecContext, const cv::Mat & image)
+void H264Encoder::CreateAVFrameFromMat(const cv::Mat & image)
 {
-	auto cctx = *outputCodecContext;
-	AVFrame* frame = av_frame_alloc();
-
-	frame->format = AV_PIX_FMT_YUV420P;
-	frame->width = cctx->width;
-	frame->height = cctx->height;
-
-	av_frame_get_buffer(frame, 32);
-
-	if (!*swsContext) {
-		*swsContext = (sws_getContext(cctx->width, cctx->height, AV_PIX_FMT_BGR24,
-			cctx->width, cctx->height, AV_PIX_FMT_YUV420P, 0, nullptr, nullptr, nullptr));
-	}
-
-	int inLinesize[1] = { 3 * cctx->width };
+	int inLinesize[1] = { 3 * m_codec_context->width };
 
 	int srcStride[4] = { image.cols * 3, 0, 0, 0 };
 	uint8_t* srcSlice[1] = {image.data};
 
-	sws_scale(*swsContext, srcSlice, srcStride, 0, image.rows, frame->data, frame->linesize);
-	frame->pts = m_frameCounter++;
+	sws_scale(m_swsContext, srcSlice, srcStride, 0, image.rows, m_frame->data, m_frame->linesize);
+	m_frame->pts = m_frameCounter++;
+}
 
-	return frame;
+void H264Encoder::InitFrame()
+{
+	m_frame = av_frame_alloc();
+
+	m_frame->format = AV_PIX_FMT_YUV420P;
+	m_frame->width = m_codec_context->width;
+	m_frame->height = m_codec_context->height;
+
+	av_frame_get_buffer(m_frame, 32);
 }
 
 
@@ -51,8 +46,8 @@ H264Encoder::H264Encoder()
 	m_codec_context->max_b_frames = 2;
 	m_codec_context->gop_size = 5;
 	m_codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
-	m_codec_context->width = 480;
-	m_codec_context->height = 320;
+	m_codec_context->width = 352;
+	m_codec_context->height = 264;
 
 	av_opt_set(m_codec_context->priv_data, "preset", "ultrafast", 0);
 
@@ -61,12 +56,17 @@ H264Encoder::H264Encoder()
 		avcodec_free_context(&m_codec_context);
 		std::cout << "Can't open codec" << std::endl;
 	}
+
+
+	m_swsContext = (sws_getContext(m_codec_context->width, m_codec_context->height, AV_PIX_FMT_BGR24,
+		m_codec_context->width, m_codec_context->height, AV_PIX_FMT_YUV420P, 0, nullptr, nullptr, nullptr));
 }
 
 
 bool H264Encoder::Encode(const cv::Mat & frame)
 {
-	AVFrame *m_avFrame = CreateAVFrameFromMat(&m_swsContext, &m_codec_context, frame);
+	this->InitFrame();
+	this->CreateAVFrameFromMat(frame);
 
 	AVPacket packet;
 	av_init_packet(&packet);
@@ -76,9 +76,9 @@ bool H264Encoder::Encode(const cv::Mat & frame)
 
 	int error;
 
-	if (avcodec_send_frame(m_codec_context, m_avFrame) < 0)
+	if (avcodec_send_frame(m_codec_context, m_frame) < 0)
 	{
-		av_frame_free(&m_avFrame);
+		//av_frame_free(&m_frame);
 		std::cout << "Can't send frame" << std::endl;
 		return false;
 	}
@@ -88,8 +88,8 @@ bool H264Encoder::Encode(const cv::Mat & frame)
 	if (error < 0)
 	{
 		std::cout << "Can't receive packet" << std::endl;
-		av_frame_free(&m_avFrame);
-		av_frame_unref(m_avFrame);
+		av_frame_free(&m_frame);
+		av_frame_unref(m_frame);
 		av_packet_unref(&packet);
 		return false;
 	}
@@ -100,8 +100,8 @@ bool H264Encoder::Encode(const cv::Mat & frame)
 		m_currentData.insert(m_currentData.end(), packet.data,packet.data+packet.size);
 		m_currentSize = packet.size;
 
-		av_frame_free(&m_avFrame);
-		av_frame_unref(m_avFrame);
+		av_frame_free(&m_frame);
+		av_frame_unref(m_frame);
 		av_packet_unref(&packet);
 		return true;
 	}
@@ -116,8 +116,6 @@ int H264Encoder::GetSize() const
 {
 	return m_currentSize;
 }
-
-
 
 H264Encoder::~H264Encoder()
 {

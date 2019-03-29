@@ -37,4 +37,5 @@ private:
 	AVCodecContext* m_codecContext = nullptr;
 	SwsContext* m_swsContext = nullptr;
 	cv::Mat m_currentFrame;
+	bool m_initialized = false;
 };

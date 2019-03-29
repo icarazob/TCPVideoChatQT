@@ -41,6 +41,7 @@ private:
 
 	void Initialize(MainWindow * view);
 
+
 public:
 	explicit MainWindowController(QString path);
 	void SetView(MainWindow *view);
@@ -52,6 +53,7 @@ public:
 	void ViewUpdatePlainText(QString message);
 	void ViewUpdateList(QString listOfClients);
 	void ViewShowFrame();
+	void ViewShowFrame(QString);
 	void ViewStartShowVideo();
 
 	void ProcessAudioData(QByteArray data, int length);
@@ -69,6 +71,8 @@ public:
 
 	void ChangeDetectorSlot(int type);
 	void CloseDetectorSlot();
+
+	void ActivateMultipleModeSlot();
 
 private:
 
@@ -90,6 +94,7 @@ private:
 
 	ThreadMap m_threadMap;
 	bool m_shouldReadFrame = false;
+	bool m_multipleMode = false;
 	ClientInformation m_clientInformation;
 
 };

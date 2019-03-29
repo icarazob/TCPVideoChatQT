@@ -24,7 +24,7 @@ namespace Server {
 		SetupSockaddr();
 		CreateBindListenSocket();
 	}
-	TCPServer::TCPServer(int port, const char * ip):
+	TCPServer::TCPServer(int port, const char * ip) :
 		m_ip(ip),
 		m_port(port)
 	{
@@ -87,6 +87,12 @@ namespace Server {
 									continue;
 								}
 							}
+
+							if (m_videoCounter != 0)
+							{
+								this->SendInformationMessage(newClient, "Start Video");
+							}
+
 
 							//Add new client to container
 							{
@@ -254,7 +260,7 @@ namespace Server {
 	bool TCPServer::ProcessInformationMessage(SOCKET client)
 	{
 		std::string message;
-		bool resultMessage = RecieveMessage(client, message);
+		bool resultMessage = this->RecieveMessage(client, message);
 
 		if (!resultMessage)
 		{
@@ -263,13 +269,30 @@ namespace Server {
 
 		if (message.compare("Stop Video") == 0)
 		{
-			//std::cout << "Send stop video" << std::endl;
-			SendAllWithoutClientInformationMessage(client, "Stop Video");
+			--m_videoCounter;
+			this->SendAllWithoutClientInformationMessage(client, "Stop Video");
 			return true;
 		}
 		else if (message.compare("Start Video") == 0)
-		{ 
-			SendAllWithoutClientInformationMessage(client, "Start Video");
+		{
+			++m_videoCounter;
+
+			this->SendAllWithoutClientInformationMessage(client, "Start Video");
+
+			if (m_clients.size() > 2)
+			{
+				if (m_videoCounter >= 2)
+				{
+					m_multipleMode = true;
+
+					this->SendAllInformationMessage("Multiple mode");
+				}
+			}
+			else
+			{
+				m_multipleMode = false;
+			}
+
 			return true;
 		}
 		else if (message.compare("Setup") == 0)
@@ -278,25 +301,25 @@ namespace Server {
 		}
 		else if (message.compare("Save History") == 0)
 		{
-			SaveMessageHistoryOfClient(client);
+			this->SaveMessageHistoryOfClient(client);
 		}
 		else if (message.compare("History") == 0)
 		{
 			std::string clientName;
 			PacketType packet;
 
-			if (ProcessPacket(client, packet))
-			{
-				if (packet == P_ChatMessage)
-				{
-					RecieveMessage(client, clientName);
-
-					//Get History from database
-
-					//
-				}
-
-			}
+			//if (ProcessPacket(client, packet))
+			//{
+			//	if (packet == P_ChatMessage)
+			//	{
+			//		RecieveMessage(client, clientName);
+			//
+			//		//Get History from database
+			//
+			//		//
+			//	}
+			//
+			//}
 
 
 		}
@@ -433,7 +456,7 @@ namespace Server {
 		}
 
 		return true;
-		
+
 	}
 
 	void TCPServer::SaveMessageHistoryOfClient(SOCKET client)
@@ -460,7 +483,49 @@ namespace Server {
 
 			}
 		}
+	}
 
+	bool TCPServer::SendFrameMultipleMode(SOCKET client, std::vector<uchar> data, std::string userName)
+	{
+		PacketType packet = P_FrameMultipleMessage;
+
+		int resultPacket = send(client, (char*)&packet, sizeof(packet), NULL);
+		if (resultPacket == SOCKET_ERROR)
+		{
+			std::cerr << "Don't send a packet message" << GetLastError() << std::endl;
+			return false;
+		}
+
+		int imgSize = static_cast<int>(data.size());
+		std::string message = std::to_string(imgSize) + ';' + userName;
+
+		int messageSize = static_cast<int>(message.size());
+		int resultInt = send(client, (char*)&messageSize, sizeof(int), NULL);
+
+		if (resultInt == SOCKET_ERROR)
+		{
+			std::cerr << "Don't send int for client" << GetLastError() << std::endl;
+			return false;
+		}
+
+
+		int resultMessage = send(client, message.c_str(), messageSize , NULL);
+
+		if (resultMessage == SOCKET_ERROR)
+		{
+			std::cerr << "Don't send string message for client" << GetLastError() << std::endl;
+			return false;
+		}
+
+		int result = send(client, (char*)data.data(), imgSize, NULL);
+
+		if (result == SOCKET_ERROR)
+		{
+			std::cerr << "Don't send message for client" << GetLastError() << std::endl;
+			return false;
+		}
+
+		return true;
 	}
 
 	TCPServer::~TCPServer()
@@ -470,7 +535,7 @@ namespace Server {
 
 
 
-	bool TCPServer::ProcessPacket(SOCKET client, PacketType & packet)
+	bool TCPServer::ProcessPacket(SOCKET client, PacketType & packet, std::string userName)
 	{
 		int resultPacket = recv(client, (char*)&packet, sizeof(packet), NULL);
 
@@ -490,7 +555,6 @@ namespace Server {
 		case P_ChatMessage:
 		{
 			this->RecieveMessage(client, message);
-
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -510,28 +574,28 @@ namespace Server {
 		case P_FrameMessage:
 		{
 			this->RecieveFrame(client, data);
-			if (!data.empty())
+
 			{
+				std::lock_guard<std::mutex> lock(m_mutex);
 
-
-				for (size_t i = 0; i < m_clients.size(); i++)
+				for (size_t i = 0; i < m_clients.size(); ++i)
 				{
-					std::lock_guard<std::mutex> lock(m_mutex);
+					auto currentClient = m_clients[i];
 
-					if (m_clients[i] == client)
+					if (currentClient == client)
 					{
 						continue;
 					}
-
-					if (!this->SendFrame(m_clients[i], data))
+					else if (!this->SendFrame(currentClient, data))
 					{
 						break;
 					}
 				}
-
 			}
+
 			break;
 		}
+
 		case P_AudioMessage:
 		{
 			if (ReceiveAudio(client, &audio, length))
@@ -564,6 +628,30 @@ namespace Server {
 			break;
 		}
 
+		case P_FrameMultipleMessage:
+		{
+			this->RecieveFrame(client, data);
+
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+
+				for (size_t i = 0; i < m_clients.size(); ++i)
+				{
+					auto currentClient = m_clients[i];
+
+					if (currentClient == client)
+					{
+						continue;
+					}
+					else if (!this->SendFrameMultipleMode(currentClient, data, userName))
+					{
+						break;
+					}
+				}
+			}
+
+			break;
+		}
 		default:
 			std::cout << "Undefined packet!" << std::endl;
 			return false;
@@ -689,12 +777,6 @@ namespace Server {
 		//Delete name
 		m_names.erase(nameIt);
 
-		for (auto client : m_clients)
-		{
-			std::cout << client << std::endl;
-		}
-
-
 		return;
 	}
 
@@ -717,7 +799,7 @@ namespace Server {
 			{
 				PacketType packet;
 
-				if (!this->ProcessPacket(client, packet))
+				if (!this->ProcessPacket(client, packet, clientName))
 				{
 					std::cout << "Close Thread!" << std::endl;
 

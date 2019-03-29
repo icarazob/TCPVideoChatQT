@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 #include <condition_variable>
 #include "SharedQueue.h"
-
+#include <map>
 
 
 
@@ -25,7 +25,8 @@ public:
 		P_ChatMessage,
 		P_FrameMessage,
 		P_AudioMessage,
-		P_InformationMessage
+		P_InformationMessage,
+		P_FrameMultipleMessage
 	};
 
 private:
@@ -35,6 +36,7 @@ private:
 
 	bool ProcessPacket(PacketType &packet);
 	void RecieveFrame();
+	void RecieveFrameMultipleMode();
 	void RecieveAudio();
 	void RecieveMessage();
 	void RecieveInformationMessage(std::string &message);
@@ -55,6 +57,7 @@ public:
 	void SendMessage(std::string message);
 	void SendFrame(std::vector<uchar> buffer);
 	void SendFrame(std::vector<uint8_t> data, int size);
+	void SendFrameMultipleMode(std::vector<uint8_t> data, int size);
 	void SendAudio(QByteArray buffer,int lengt);
 	void SendInformationMessage(std::string message);
 
@@ -72,9 +75,11 @@ Q_SIGNALS:
 	void recieveEventMessage(QString message);
 	void recieveEventFrame();
 	void recieveEventAudio(QByteArray, int);
+	void recieveEventFrameMultipleMode(QString);
 
 	void startShowVideo();
 	void stopShowVideo();
+	void multipleMode();
 
 	void updateList(QString);
 
@@ -100,10 +105,14 @@ private:
 	bool m_terminating = false;
 	bool m_clearQueue = false;
 	bool m_faceDetectorRun = true;
+	bool m_multipleMode = false;
 
 	std::unique_ptr<Detector> m_faceDetector;
 	std::unique_ptr<H264Decoder> m_decoder;
 	std::unique_ptr<SharedQueue<cv::Mat>> m_queueFrames;
+	std::unique_ptr<SharedQueue<std::string>> m_queueLabelNames;
+
+	std::map<std::string, std::unique_ptr<H264Decoder>> m_decodersMultipleMode;
 };
 
 

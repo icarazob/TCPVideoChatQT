@@ -15,7 +15,6 @@
 #define __STDC_FORMAT_MACROS
 
 
-
 MainWindowController::MainWindowController(QString path) :
 	m_view(nullptr),
 	m_tcpClient(nullptr),
@@ -40,6 +39,8 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventAudio(QByteArray, int)), SLOT(ProcessAudioData(QByteArray, int)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(updateList(QString)), SLOT(ViewUpdateList(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
+	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrameMultipleMode(QString)), SLOT(ViewShowFrame(QString)));
+	QObject::connect(m_tcpClient.get(), SIGNAL(multipleMode()), SLOT(ActivateMultipleModeSlot()));
 
 	QObject::connect(m_audioProcesscor.get(), SIGNAL(audioDataPrepare(QByteArray, int)), SLOT(SendAudioSlot(QByteArray, int)));
 
@@ -148,12 +149,16 @@ void MainWindowController::TurnVideoSlot(bool state)
 	}
 
 	return;
-
 }
 
 void MainWindowController::ViewShowFrame()
 {
 	m_view->ShowFrame(m_tcpClient->GetCurrentFrame());
+}
+
+void MainWindowController::ViewShowFrame(QString labelName)
+{
+	m_view->ShowFrameMultipleMode(m_tcpClient->GetCurrentFrame(), labelName);
 }
 
 void MainWindowController::SendFrameSlot(std::vector<uchar> data)
@@ -204,7 +209,7 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 			}
 
 			cv::Mat resizedFrame;
-			cv::resize(frame, resizedFrame, cv::Size(c_widthLabel, c_heightLabel));
+			cv::resize(frame, resizedFrame, cv::Size(352, 264));
 
 			if (m_encoder->Encode(resizedFrame))
 			{
@@ -246,7 +251,14 @@ void MainWindowController::SetClientInformation(std::tuple<std::string, std::str
 
 void MainWindowController::SendFrame(std::vector<uint8_t> data, int size)
 {
-	m_tcpClient->SendFrame(data, size);
+	if (m_multipleMode)
+	{
+		m_tcpClient->SendFrameMultipleMode(data, size);
+	}
+	else
+	{
+		m_tcpClient->SendFrame(data, size);
+	}
 }
 
 void MainWindowController::ResetEncoder()
@@ -291,4 +303,10 @@ void MainWindowController::ChangeDetectorSlot(int type)
 void MainWindowController::CloseDetectorSlot()
 {
 	m_tcpClient->CloseDetector();
+}
+
+void MainWindowController::ActivateMultipleModeSlot()
+{
+	m_multipleMode = true;
+	m_view->SetVisibleLabel(false);
 }

@@ -16,6 +16,7 @@ TCPClient::TCPClient(int port, const char * ip, std::string name) :
 	m_name(name),
 	m_decoder(std::make_unique<H264Decoder>()),
 	m_queueFrames(std::make_unique<SharedQueue<cv::Mat>>()),
+	m_queueLabelNames(std::make_unique<SharedQueue<std::string>>()),
 	m_faceDetector(std::make_unique<Detector>())
 {
 	InitializeWSA();
@@ -61,6 +62,11 @@ bool TCPClient::ProcessPacket(PacketType & packet)
 	case PacketType::P_FrameMessage:
 	{
 		RecieveFrame();
+		break;
+	}
+	case PacketType::P_FrameMultipleMessage:
+	{
+		RecieveFrameMultipleMode();
 		break;
 	}
 	case PacketType::P_InformationMessage:
@@ -217,6 +223,13 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 	{
 		Q_EMIT startShowVideo();
 	}
+	else if (stringMessage.compare(InformationStrings::MultipleMode().toStdString()) == 0)
+	{
+		m_multipleMode = true;
+		ResetDecoder();
+		m_clearQueue = true;
+		Q_EMIT multipleMode();
+	}
 	else if (stringMessage.compare(InformationStrings::List().toStdString()) == 0)
 	{
 		PacketType packet;
@@ -288,8 +301,21 @@ void TCPClient::ProcessFrameThread()
 				m_faceDetector->Process(m_currentFrame);
 			}
 
-			Q_EMIT recieveEventFrame();
-			m_queueFrames->pop_front();
+			if (m_multipleMode)
+			{
+				std::string labelName = m_queueLabelNames->front();
+
+				Q_EMIT recieveEventFrameMultipleMode(QString::fromStdString(labelName));
+
+				m_queueFrames->pop_front();
+				m_queueLabelNames->pop_front();
+			}
+			else
+			{
+				Q_EMIT recieveEventFrame();
+				m_queueFrames->pop_front();
+			}
+
 		}
 		
 		if (m_clearQueue)
@@ -440,6 +466,41 @@ void TCPClient::SendFrame(std::vector<uint8_t> data, int size)
 	return;
 }
 
+void TCPClient::SendFrameMultipleMode(std::vector<uint8_t> data, int size)
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	PacketType packet = PacketType::P_FrameMultipleMessage;
+	//packet
+	int resultPacket = send(m_connection, (char*)&packet, sizeof(packet), NULL);
+
+	if (resultPacket == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrameMultipleMode: error send packet";
+		return;
+	}
+	int bufferSize = size;
+
+	//send int
+	int resultInt = send(m_connection, (char*)&bufferSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrameMultipleMode: error send size";
+		return;
+	}
+	//send frame
+	int resultFrame = send(m_connection, reinterpret_cast<char*>(data.data()), bufferSize, NULL);
+
+	if (resultFrame == SOCKET_ERROR)
+	{
+		qDebug() << "SendFrameMultipleMode: error send frame";
+		return;
+	}
+
+	return;
+}
+
 void TCPClient::SendAudio(QByteArray buffer, int length)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -551,14 +612,81 @@ void TCPClient::RecieveFrame()
 		return;
 	}
 
+	if (m_multipleMode)
+	{
+		return;
+	}
+
 	std::shared_ptr<uint8_t*> data = std::make_shared<uint8_t*>();
 	*data = buffer.data();
-	
 
 	if (m_decoder->Decode(*data, frameSize))
 	{
 		m_queueFrames->push_back(m_decoder->GetFrame());
 	}
+
+	return;
+}
+
+void TCPClient::RecieveFrameMultipleMode()
+{
+	std::vector<uchar> buffer;
+
+	int messageSize = 0;
+	int resultInt = recv(m_connection, (char*)&messageSize, sizeof(int), NULL);
+
+	if (resultInt == SOCKET_ERROR)
+	{
+		qDebug() << "RecieveMessage: error size";
+		exit(1);
+	}
+
+	char *bufferMessage = new char[messageSize + 1];
+	bufferMessage[messageSize] = '\0';
+
+	int result = recv(m_connection, bufferMessage, messageSize, NULL);
+	if (result == SOCKET_ERROR)
+	{
+		qDebug() << "RecieveMessage: error message";
+		exit(1);
+	}
+
+	std::stringstream parseString(bufferMessage);
+	std::string segment;
+	std::vector<std::string> seglist;
+
+	while (std::getline(parseString, segment, ';'))
+	{
+		seglist.push_back(segment);
+	}
+
+	int frameSize = std::stoi(seglist[0]);
+	auto userName = seglist[1];
+
+
+	buffer.resize(frameSize);
+
+	int resultFrame = recv(m_connection, (char*)buffer.data(), frameSize, MSG_WAITALL);
+
+	if (resultFrame == SOCKET_ERROR)
+	{
+		qDebug() << "RecieveFrame: error  frame";
+		return;
+	}
+
+	std::shared_ptr<uint8_t*> data = std::make_shared<uint8_t*>();
+	*data = buffer.data();
+
+	if (m_decodersMultipleMode.find(userName) == m_decodersMultipleMode.end())
+	{
+		m_decodersMultipleMode.insert(std::make_pair(userName, std::make_unique<H264Decoder>()));
+	}
+
+	if (m_decodersMultipleMode[userName]->Decode(*data, frameSize))
+	{
+		m_queueFrames->push_back(m_decodersMultipleMode[userName]->GetFrame());
+		m_queueLabelNames->push_back(userName);
+ 	}
 
 	return;
 }

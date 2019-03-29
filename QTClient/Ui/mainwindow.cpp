@@ -81,6 +81,11 @@ void MainWindow::SetAppPath(QString path)
 	this->ChangeUserLogo();
 }
 
+void MainWindow::SetVisibleLabel(bool visibility)
+{
+	ui->label->setVisible(visibility);
+}
+
 MainWindow::~MainWindow()
 {
 	delete ui;
@@ -90,12 +95,41 @@ void MainWindow::ShowFrame(const cv::Mat &copyFrame)
 	if (!m_stopShowVideo)
 	{
 		cv::Mat result;
-		//cv::resize(copyFrame, result, cv::Size(ui->label->width(), ui->label->height()));
 		cv::cvtColor(copyFrame, result, CV_BGR2RGB);
+		cv::resize(result, result, cv::Size(ui->label->width(), ui->label->height()));
 		ui->label->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
 	}
 
 	return;
+}
+
+void MainWindow::ShowFrameMultipleMode(const cv::Mat & copyFrame, QString labelName)
+{
+	if (m_labels.contains(labelName))
+	{
+		if (!copyFrame.empty())
+		{
+			cv::Mat result;
+			cv::cvtColor(copyFrame, result, CV_BGR2RGB);
+			cv::resize(result, result, cv::Size(ui->label->width(), ui->label->height()));
+
+			m_labels.value(labelName)->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
+		}
+		else
+		{
+			std::cout << "Empty" << std::endl;
+		}
+
+	}
+	else
+	{
+		QLabel *currentLabel = new QLabel(this);
+		currentLabel->setFixedSize(352, 264);
+
+		ui->labelsLayout->addWidget(currentLabel);
+
+		m_labels.insert(labelName, currentLabel);
+	}
 }
 
 void MainWindow::ShowFrameOnNativeLabel(const cv::Mat& frame)
@@ -147,7 +181,7 @@ void MainWindow::UpdatePlainText(QString message)
 		messageOfClient = stdMessage;
 	}
 
-	m_notification->Show(QString::fromStdString(nameOfClient), QString::fromStdString(messageOfClient));
+	//m_notification->Show(QString::fromStdString(nameOfClient), QString::fromStdString(messageOfClient));
 
 	//Add message
 	this->AddItemToList(message, true);

@@ -9,37 +9,40 @@ H264Decoder::H264Decoder()
 
 bool H264Decoder::Decode(uint8_t * data, int size)
 {
-	AVPacket packet;
-	av_init_packet(&packet);
-
-	packet.data = data;
-	packet.size = size;
-
-	if (avcodec_send_packet(m_codecContext, &packet) < 0)
+	if (m_initialized)
 	{
-		std::cout << "Can't send packet to context" << std::endl;
+		AVPacket packet;
+		av_init_packet(&packet);
+
+		packet.data = data;
+		packet.size = size;
+
+		if (avcodec_send_packet(m_codecContext, &packet) < 0)
+		{
+			std::cout << "Can't send packet to context" << std::endl;
+			av_packet_unref(&packet);
+			return false;
+		}
+
+		AVFrame *avFrame = av_frame_alloc();
+		int error;
+
+		error = avcodec_receive_frame(m_codecContext, avFrame);
+
+		if (error == AVERROR(EAGAIN) || error < 0)
+		{
+			std::cout << "Error" << std::endl;
+			return false;
+		}
+
+		ConvertToMat(avFrame);
+
+		av_frame_free(&avFrame);
+		av_frame_unref(avFrame);
 		av_packet_unref(&packet);
-		return false;
+
+		return true;
 	}
-
-	AVFrame *avFrame = av_frame_alloc();
-	int error;
-
-	error = avcodec_receive_frame(m_codecContext, avFrame);
-
-	if (error == AVERROR(EAGAIN) || error < 0)
-	{
-		std::cout << "Error" << std::endl;
-		return false;
-	}
-
-	ConvertToMat(avFrame);
-
-	av_frame_free(&avFrame);
-	av_frame_unref(avFrame);
-	av_packet_unref(&packet);
-
-	return true;
 }
 
 cv::Mat H264Decoder::GetFrame() const
@@ -66,8 +69,8 @@ void H264Decoder::Inititalize()
 		return;
 	}
 
-	m_codecContext->width = 480;
-	m_codecContext->height = 320;
+	m_codecContext->width = 352;
+	m_codecContext->height = 264;
 
 	if (avcodec_open2(m_codecContext, decoderCodec, NULL) < 0)
 	{
@@ -79,6 +82,8 @@ void H264Decoder::Inititalize()
 	m_swsContext = sws_getContext(m_codecContext->width, m_codecContext->height,
 		AV_PIX_FMT_YUV420P, m_codecContext->width, m_codecContext->height,
 		AV_PIX_FMT_BGR24, 0, 0, 0, 0);
+
+	m_initialized = true;
 }
 
 void H264Decoder::ConvertToMat(AVFrame* image)
