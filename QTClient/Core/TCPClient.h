@@ -46,6 +46,7 @@ private:
 
 	template<typename type>
 	void ResetDetector();
+	void ResetDecodersMultipleMode();
 
 public:
 	explicit TCPClient(int port, const char *ip,std::string name);
@@ -79,7 +80,9 @@ Q_SIGNALS:
 
 	void startShowVideo();
 	void stopShowVideo();
+
 	void multipleMode();
+	void singleMode();
 
 	void updateList(QString);
 

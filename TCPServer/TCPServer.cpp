@@ -270,14 +270,25 @@ namespace Server {
 		if (message.compare("Stop Video") == 0)
 		{
 			--m_videoCounter;
-			this->SendAllWithoutClientInformationMessage(client, "Stop Video");
+
+			if (m_videoCounter < 2)
+			{
+				m_multipleMode = false;
+
+				this->SendAllInformationMessage("Single Mode");
+
+				if (m_videoCounter == 0)
+				{
+					this->SendAllWithoutClientInformationMessage(client, "Stop Video");
+				}
+			}
+
+
 			return true;
 		}
 		else if (message.compare("Start Video") == 0)
 		{
 			++m_videoCounter;
-
-			this->SendAllWithoutClientInformationMessage(client, "Start Video");
 
 			if (m_clients.size() > 2)
 			{
@@ -286,12 +297,14 @@ namespace Server {
 					m_multipleMode = true;
 
 					this->SendAllInformationMessage("Multiple mode");
+					
+					return true;
 				}
 			}
-			else
-			{
-				m_multipleMode = false;
-			}
+
+			m_multipleMode = false;
+
+			this->SendAllWithoutClientInformationMessage(client, "Start Video");
 
 			return true;
 		}
@@ -302,6 +315,7 @@ namespace Server {
 		else if (message.compare("Save History") == 0)
 		{
 			this->SaveMessageHistoryOfClient(client);
+			return true;
 		}
 		else if (message.compare("History") == 0)
 		{
@@ -368,7 +382,7 @@ namespace Server {
 				continue;
 			}
 
-			SendInformationMessage(m_clients[i], message);
+			this->SendInformationMessage(m_clients[i], message);
 		}
 	}
 
@@ -378,7 +392,7 @@ namespace Server {
 
 		for (int i = 0; i < m_clients.size(); i++)
 		{
-			SendInformationMessage(m_clients[i], message);
+			this->SendInformationMessage(m_clients[i], message);
 		}
 	}
 
@@ -598,7 +612,7 @@ namespace Server {
 
 		case P_AudioMessage:
 		{
-			if (ReceiveAudio(client, &audio, length))
+			if (this->ReceiveAudio(client, &audio, length))
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -621,7 +635,7 @@ namespace Server {
 
 		case P_InformationMessage:
 		{
-			if (!ProcessInformationMessage(client))
+			if (!this->ProcessInformationMessage(client))
 			{
 				return false;
 			}
@@ -811,10 +825,10 @@ namespace Server {
 
 					this->SendClientsList();
 
-					return;
+					std::cout << "Video counter = " << m_videoCounter << std::endl;
 				}
 
-				std::this_thread::sleep_for(std::chrono::microseconds(10));
+				std::this_thread::sleep_for(std::chrono::microseconds(5));
 			}
 		};
 	}

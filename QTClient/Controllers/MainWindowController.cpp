@@ -41,6 +41,7 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrame()), SLOT(ViewShowFrame()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrameMultipleMode(QString)), SLOT(ViewShowFrame(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(multipleMode()), SLOT(ActivateMultipleModeSlot()));
+	QObject::connect(m_tcpClient.get(), SIGNAL(singleMode()), SLOT(DeactivateMultipleModeSlot()));
 
 	QObject::connect(m_audioProcesscor.get(), SIGNAL(audioDataPrepare(QByteArray, int)), SLOT(SendAudioSlot(QByteArray, int)));
 
@@ -50,6 +51,7 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_view, &MainWindow::TurnVideoSignal, this, &MainWindowController::TurnVideoSlot);
 	QObject::connect(m_view, &MainWindow::AboutClickedSignal, this, &MainWindowController::ShowAboutWidget);
 	QObject::connect(m_view, &MainWindow::SettingsClickedSignal, this, &MainWindowController::ShowSettingsWidget);
+	QObject::connect(m_view, &MainWindow::StartShowVideoSignal, this, &MainWindowController::ViewStartShowVideo);
 
 	QObject::connect(m_settingsWindowController.get(), &SettingsWindowController::ChangeDetectorSignal, this, &MainWindowController::ChangeDetectorSlot);
 	QObject::connect(m_settingsWindowController.get(), &SettingsWindowController::CloseDetectorSignal, this, &MainWindowController::CloseDetectorSlot);
@@ -67,13 +69,10 @@ MainWindowController::~MainWindowController()
 	if (m_tcpClient != nullptr)
 	{
 		m_tcpClient->StopThread();
+
 		TurnVideoSlot(false);
+
 		m_audioProcesscor->CloseInput();
-
-		//SendInformationSlot(InformationStrings::StopVideo());
-
-		//To do
-		//m_tcpClient->SendMessageWithoutName(m_clientInformation.name + " is disconnected!");
 	}
 }
 
@@ -104,7 +103,10 @@ void MainWindowController::SendAudioSlot(QByteArray buffer, int length)
 
 void MainWindowController::ViewStartShowVideo()
 {
-	m_view->StartShowVideo();
+	if (!m_multipleMode)
+	{
+		m_view->StartShowVideo();
+	}
 }
 
 void MainWindowController::TurnAudioSlot(bool state)
@@ -123,7 +125,7 @@ void MainWindowController::TurnVideoSlot(bool state)
 {
 	if (state)
 	{
-		SendInformationSlot(InformationStrings::StartVideo());
+		this->SendInformationSlot(InformationStrings::StartVideo());
 
 		std::string threadName("VideoThread");
 		std::thread videoThread(GetVideoHandler());
@@ -226,9 +228,10 @@ std::function<void(void)> MainWindowController::GetVideoHandler()
 		}
 
 		m_videoCapture->release();
-		m_view->ClearNativeFrameLabel();
-		m_view->StopVideoStream(); //??
-		SendInformationSlot(InformationStrings::StopVideo());
+
+		m_view->StopVideo();
+
+		this->SendInformationSlot(InformationStrings::StopVideo());
 
 		return;
 	};
@@ -309,4 +312,12 @@ void MainWindowController::ActivateMultipleModeSlot()
 {
 	m_multipleMode = true;
 	m_view->SetVisibleLabel(false);
+}
+
+void MainWindowController::DeactivateMultipleModeSlot()
+{
+	m_multipleMode = false;
+
+	m_view->DeleteFrameLabels();
+	m_view->SetVisibleLabel(true);
 }

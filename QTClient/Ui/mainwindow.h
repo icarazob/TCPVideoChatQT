@@ -50,6 +50,7 @@ public:
     explicit MainWindow(QMainWindow *parent = nullptr);
 
 	void StopShowVideo();
+	void StopVideo();
 	void ClearNativeFrameLabel();
 
 	void UpdatePlainText(QString message);
@@ -65,6 +66,8 @@ public:
 	void SetAppPath(QString path);
 	void SetVisibleLabel(bool visibility);
 
+	void DeleteFrameLabels();
+
     ~MainWindow();
 
 Q_SIGNALS:
@@ -77,6 +80,8 @@ Q_SIGNALS:
 	void AboutClickedSignal();
 	void SettingsClickedSignal();
 	void WindowClosedSignal();
+	void StartShowVideoSignal();
+	
 
 public slots:
 	void UpdatePlain();
@@ -103,6 +108,8 @@ private:
 	bool m_stopShowVideo = false;
 
 	QPointer<QAction> m_Act = nullptr;
+
+	QSize m_labelSize;
 };
 
 #endif // MAINWINDOW_H

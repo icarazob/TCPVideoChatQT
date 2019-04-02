@@ -22,13 +22,15 @@ MainWindow::MainWindow(QMainWindow *parent) :
 	QMainWindow(parent),
 	ui(new Ui::MainWindow),
 	m_notification(std::make_unique<PopUpNotification>()),
-	m_stopShowVideo(true)
+	m_stopShowVideo(true),
+	m_labelSize(352, 264)
 {
 	ui->setupUi(this);
 
 	Initialize();
 
 	QObject::connect(ui->videoButton, SIGNAL(clicked()), SLOT(StartVideoStream()));
+	QObject::connect(ui->videoButton, SIGNAL(clicked()), SIGNAL(StartShowVideoSignal()));
 	QObject::connect(ui->stopVideoButton, SIGNAL(clicked()), SLOT(StopVideoStream()));
 	QObject::connect(ui->audioButton, SIGNAL(clicked()), SLOT(TurnAudio()));
 	QObject::connect(ui->menuAbout, SIGNAL(aboutToShow()), SIGNAL(AboutClickedSignal()));
@@ -83,7 +85,21 @@ void MainWindow::SetAppPath(QString path)
 
 void MainWindow::SetVisibleLabel(bool visibility)
 {
+	ui->label->clear();
 	ui->label->setVisible(visibility);
+}
+
+void MainWindow::DeleteFrameLabels()
+{
+	for (auto &item : m_labels.toStdMap())
+	{
+		auto currentLabel = item.second;
+
+		ui->labelsLayout->removeWidget(currentLabel);
+		delete currentLabel;
+	}
+
+	m_labels.clear();
 }
 
 MainWindow::~MainWindow()
@@ -111,20 +127,15 @@ void MainWindow::ShowFrameMultipleMode(const cv::Mat & copyFrame, QString labelN
 		{
 			cv::Mat result;
 			cv::cvtColor(copyFrame, result, CV_BGR2RGB);
-			cv::resize(result, result, cv::Size(ui->label->width(), ui->label->height()));
+			cv::resize(result, result, cv::Size(m_labelSize.width(), m_labelSize.height()));
 
 			m_labels.value(labelName)->setPixmap(QPixmap::fromImage(QImage(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888)));
 		}
-		else
-		{
-			std::cout << "Empty" << std::endl;
-		}
-
 	}
 	else
 	{
-		QLabel *currentLabel = new QLabel(this);
-		currentLabel->setFixedSize(352, 264);
+		QLabel *currentLabel = new QLabel();
+		currentLabel->setFixedSize(m_labelSize);
 
 		ui->labelsLayout->addWidget(currentLabel);
 
@@ -142,6 +153,8 @@ void MainWindow::StartShowVideo()
 	m_stopShowVideo = false;
 	ui->listWidget->setMinimumHeight(150);
 	ui->label->setVisible(true);
+
+	this->UpdateNativeLabel();
 	//ui->plainTextEdit->setGeometry(280, 480, 761, 200);
 }
 
@@ -192,8 +205,7 @@ void MainWindow::StartVideoStream()
 	ui->videoButton->setVisible(false);
 	ui->stopVideoButton->setVisible(true);
 
-	StartShowVideo();
-	UpdateNativeLabel();
+	//StartShowVideo();
 	
 	TurnVideoSignal(true);
 	
@@ -236,6 +248,14 @@ void MainWindow::StopShowVideo()
 {
 	m_stopShowVideo = true;
 	ui->label->clear();
+}
+
+void MainWindow::StopVideo()
+{
+	ui->videoButton->setVisible(true);
+	ui->stopVideoButton->setVisible(false);
+
+	Q_EMIT videoStream(false);
 }
 
 void MainWindow::ClearNativeFrameLabel()
@@ -370,7 +390,7 @@ bool MainWindow::eventFilter(QObject * watched, QEvent * event)
 
 void MainWindow::AddItemToList(QString text, bool isClientMessage)
 {
-	ListItem *item = new ListItem();
+	ListItem *item = new ListItem(this);
 	item->SetText(text, isClientMessage);
 
 	QListWidgetItem *itemList = new QListWidgetItem(ui->listWidget);

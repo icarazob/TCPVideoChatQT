@@ -9,6 +9,8 @@
 #include <chrono>
 #include <QDebug>
 
+
+
 TCPClient::TCPClient(int port, const char * ip, std::string name) :
 	m_terminating(false),
 	m_port(port),
@@ -34,6 +36,11 @@ TCPClient::~TCPClient()
 	{
 		m_frameThread.join();
 	}
+}
+
+void TCPClient::ResetDecodersMultipleMode()
+{
+	m_decodersMultipleMode.clear();
 }
 
 bool TCPClient::ProcessPacket(PacketType & packet)
@@ -105,7 +112,7 @@ std::function<void (void)> TCPClient::CreateProcessHandler()
 				return;
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			std::this_thread::sleep_for(std::chrono::microseconds(5));
 		}
 
 	};
@@ -217,17 +224,27 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 		Q_EMIT stopShowVideo();
 
 		ResetDecoder();
-		m_clearQueue = true;
 	}
 	else if (stringMessage.compare(InformationStrings::StartVideo().toStdString()) == 0)
 	{
 		Q_EMIT startShowVideo();
 	}
+	else if (stringMessage.compare(InformationStrings::SingleMode().toStdString()) == 0)
+	{
+		m_multipleMode = false;
+
+		m_clearQueue = true;
+
+		this->ResetDecodersMultipleMode();
+
+		Q_EMIT singleMode();
+	}
 	else if (stringMessage.compare(InformationStrings::MultipleMode().toStdString()) == 0)
 	{
 		m_multipleMode = true;
-		ResetDecoder();
+
 		m_clearQueue = true;
+
 		Q_EMIT multipleMode();
 	}
 	else if (stringMessage.compare(InformationStrings::List().toStdString()) == 0)
@@ -285,6 +302,8 @@ void TCPClient::ResetDecoder()
 {
 	m_decoder.reset(nullptr);
 	m_decoder = std::make_unique<H264Decoder>();
+
+	m_clearQueue = true;
 }
 
 void TCPClient::ProcessFrameThread()
@@ -307,24 +326,24 @@ void TCPClient::ProcessFrameThread()
 
 				Q_EMIT recieveEventFrameMultipleMode(QString::fromStdString(labelName));
 
-				m_queueFrames->pop_front();
 				m_queueLabelNames->pop_front();
 			}
 			else
 			{
 				Q_EMIT recieveEventFrame();
-				m_queueFrames->pop_front();
 			}
-
+			
+			m_queueFrames->pop_front();
 		}
 		
 		if (m_clearQueue)
 		{
 			m_queueFrames->clear();
+			m_queueLabelNames->clear();
 			m_clearQueue = false;
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::microseconds(5));
 	}
 
 	return;
@@ -663,7 +682,6 @@ void TCPClient::RecieveFrameMultipleMode()
 	int frameSize = std::stoi(seglist[0]);
 	auto userName = seglist[1];
 
-
 	buffer.resize(frameSize);
 
 	int resultFrame = recv(m_connection, (char*)buffer.data(), frameSize, MSG_WAITALL);
@@ -671,6 +689,11 @@ void TCPClient::RecieveFrameMultipleMode()
 	if (resultFrame == SOCKET_ERROR)
 	{
 		qDebug() << "RecieveFrame: error  frame";
+		return;
+	}
+
+	if (!m_multipleMode)
+	{
 		return;
 	}
 
@@ -757,9 +780,9 @@ template<typename type>
 inline void TCPClient::ResetDetector()
 {
 	std::lock_guard<std::mutex> lock(m_frameThreadMutex);
+
 	m_faceDetectorRun = false;
 	m_faceDetector.reset(nullptr);
 	m_faceDetector = std::make_unique<type>(m_path.toStdString());
 	m_faceDetectorRun = true;
-	return;
 }

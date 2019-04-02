@@ -73,6 +73,7 @@ public:
 	void CloseDetectorSlot();
 
 	void ActivateMultipleModeSlot();
+	void DeactivateMultipleModeSlot();
 
 private:
 
