@@ -55,6 +55,8 @@ public:
 	void ViewShowFrame();
 	void ViewShowFrame(QString);
 	void ViewStartShowVideo();
+	void ViewHideVideoLabelSlot();
+
 
 	void ProcessAudioData(QByteArray data, int length);
 	void TurnAudioSlot(bool state);

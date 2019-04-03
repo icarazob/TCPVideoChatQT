@@ -30,7 +30,7 @@ namespace Server {
 		void InitializeWSA();
 		void SetupSockaddr();
 		void CreateBindListenSocket();
-		void SendMessage(SOCKET client, const std::string message);
+		bool SendMessage(SOCKET client, const std::string message);
 		void SendAllMessage(const std::string message);
 		bool RecieveMessage(SOCKET client, std::string &message);
 		void DeleteClient(SOCKET client);
@@ -41,7 +41,7 @@ namespace Server {
 		bool ReceiveAudio(SOCKET client, char **buffer, int &length);
 		void SendAudio(SOCKET client, char *buffer, int length);
 		bool ProcessInformationMessage(SOCKET client);
-		void SendInformationMessage(SOCKET client, std::string message);
+		bool SendInformationMessage(SOCKET client, std::string message);
 		void SendAllWithoutClientInformationMessage(SOCKET client, std::string message);
 		void SendAllInformationMessage(std::string message);
 		void RecievePacket(SOCKET client, PacketType &packet);

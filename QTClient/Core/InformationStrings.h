@@ -44,4 +44,9 @@ public:
 	{
 		return "Single Mode";
 	}
+
+	QString static Hide()
+	{
+		return "Hide";
+	}
 };

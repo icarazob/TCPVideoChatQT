@@ -84,6 +84,8 @@ Q_SIGNALS:
 	void multipleMode();
 	void singleMode();
 
+	void hideVideoLabel();
+
 	void updateList(QString);
 
 private:

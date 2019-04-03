@@ -75,7 +75,11 @@ namespace Server {
 						if (insertStatus)
 						{
 							//Send connected
-							SendInformationMessage(newClient, "Connected");
+							if (!this->SendInformationMessage(newClient, "Connected"))
+							{
+								continue;
+							}
+
 							std::cout << "Client connected!" << std::endl;
 
 							//Receive setup message
@@ -90,7 +94,10 @@ namespace Server {
 
 							if (m_videoCounter != 0)
 							{
-								this->SendInformationMessage(newClient, "Start Video");
+								if (!this->SendInformationMessage(newClient, "Start Video"))
+								{
+									continue;
+								}
 							}
 
 
@@ -111,7 +118,10 @@ namespace Server {
 						}
 						else
 						{
-							SendInformationMessage(newClient, "Client with the same name exist");
+							if (!this->SendInformationMessage(newClient, "Client with the same name exist"))
+							{
+								continue;
+							}
 						}
 					}
 				}
@@ -271,6 +281,8 @@ namespace Server {
 		{
 			--m_videoCounter;
 
+			std::cout << m_videoCounter << std::endl;
+
 			if (m_videoCounter < 2)
 			{
 				m_multipleMode = false;
@@ -280,10 +292,9 @@ namespace Server {
 				if (m_videoCounter == 0)
 				{
 					this->SendAllWithoutClientInformationMessage(client, "Stop Video");
+					this->SendAllInformationMessage("Hide");
 				}
 			}
-
-
 			return true;
 		}
 		else if (message.compare("Start Video") == 0)
@@ -341,7 +352,7 @@ namespace Server {
 		return false;
 	}
 
-	void TCPServer::SendInformationMessage(SOCKET client, std::string message)
+	bool TCPServer::SendInformationMessage(SOCKET client, std::string message)
 	{
 		PacketType packet = P_InformationMessage;
 
@@ -349,7 +360,7 @@ namespace Server {
 		if (resultPacket == SOCKET_ERROR)
 		{
 			std::cerr << "Information: can't send a packet" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int messageSize = static_cast<int>(message.size());
@@ -358,7 +369,7 @@ namespace Server {
 		if (resultInt == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int result = send(client, message.c_str(), messageSize, NULL);
@@ -366,9 +377,10 @@ namespace Server {
 		if (result == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
+		return true;
 	}
 
 	void TCPServer::SendAllWithoutClientInformationMessage(SOCKET client, std::string message)
@@ -381,8 +393,10 @@ namespace Server {
 			{
 				continue;
 			}
-
-			this->SendInformationMessage(m_clients[i], message);
+			else if (!this->SendInformationMessage(m_clients[i], message))
+			{
+				break;
+			}
 		}
 	}
 
@@ -390,9 +404,12 @@ namespace Server {
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 
-		for (int i = 0; i < m_clients.size(); i++)
+		for (int i = 0; i < m_clients.size(); ++i)
 		{
-			this->SendInformationMessage(m_clients[i], message);
+			if (!this->SendInformationMessage(m_clients[i], message))
+			{
+				break;
+			}
 		}
 	}
 
@@ -578,8 +595,10 @@ namespace Server {
 					{
 						continue;
 					}
-
-					this->SendMessage(m_clients[i], message);
+					else if (!this->SendMessage(m_clients[i], message))
+					{
+						break;
+					}
 				}
 			}
 
@@ -706,7 +725,7 @@ namespace Server {
 
 	}
 
-	void TCPServer::SendMessage(SOCKET client, const std::string message)
+	bool TCPServer::SendMessage(SOCKET client, const std::string message)
 	{
 		PacketType packet = P_ChatMessage;
 
@@ -714,7 +733,7 @@ namespace Server {
 		if (resultPacket == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send a packet message" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int messageSize = static_cast<int>(message.size());
@@ -723,7 +742,7 @@ namespace Server {
 		if (resultInt == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send int message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
 
 		int result = send(client, message.c_str(), messageSize, NULL);
@@ -731,8 +750,10 @@ namespace Server {
 		if (result == SOCKET_ERROR)
 		{
 			std::cerr << "Don't send message for client" << GetLastError() << std::endl;
-			return;
+			return false;
 		}
+
+		return true;
 	}
 
 	void TCPServer::SendAllMessage(const std::string message)
@@ -741,7 +762,10 @@ namespace Server {
 
 		for (auto client : m_clients)
 		{
-			this->SendMessage(client, message);
+			if (!this->SendMessage(client, message))
+			{
+				break;
+			}
 		}
 	}
 
@@ -779,17 +803,23 @@ namespace Server {
 		std::lock_guard<std::mutex> lock(m_mutex);
 
 		auto clientIt = std::find(m_clients.begin(), m_clients.end(), client);
-		int positionInt = clientIt - m_clients.begin();
-		auto nameIt = m_names.begin() + positionInt;
 
-		//delete from db
-		DB::GetInstance().DeleteClient(m_names[positionInt]);
+		if (clientIt != m_clients.end())
+		{
+			int positionInt = clientIt - m_clients.begin();
 
-		//Delete socket
-		m_clients.erase(clientIt);
+			auto nameIt = m_names.begin() + positionInt;
 
-		//Delete name
-		m_names.erase(nameIt);
+			//delete from db
+			DB::GetInstance().DeleteClient(m_names[positionInt]);
+
+			//Delete socket
+			m_clients.erase(clientIt);
+
+			//Delete name
+			m_names.erase(nameIt);
+		}
+
 
 		return;
 	}
@@ -826,6 +856,8 @@ namespace Server {
 					this->SendClientsList();
 
 					std::cout << "Video counter = " << m_videoCounter << std::endl;
+
+					return;
 				}
 
 				std::this_thread::sleep_for(std::chrono::microseconds(5));

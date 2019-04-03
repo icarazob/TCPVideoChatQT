@@ -247,6 +247,10 @@ void TCPClient::RecieveInformationMessage(std::string &message)
 
 		Q_EMIT multipleMode();
 	}
+	else if (stringMessage.compare(InformationStrings::Hide().toStdString()) == 0)
+	{
+		Q_EMIT hideVideoLabel();
+	}
 	else if (stringMessage.compare(InformationStrings::List().toStdString()) == 0)
 	{
 		PacketType packet;

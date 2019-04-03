@@ -42,6 +42,7 @@ void MainWindowController::SetView(MainWindow * view)
 	QObject::connect(m_tcpClient.get(), SIGNAL(recieveEventFrameMultipleMode(QString)), SLOT(ViewShowFrame(QString)));
 	QObject::connect(m_tcpClient.get(), SIGNAL(multipleMode()), SLOT(ActivateMultipleModeSlot()));
 	QObject::connect(m_tcpClient.get(), SIGNAL(singleMode()), SLOT(DeactivateMultipleModeSlot()));
+	QObject::connect(m_tcpClient.get(), SIGNAL(hideVideoLabel()), SLOT(ViewHideVideoLabelSlot()));
 
 	QObject::connect(m_audioProcesscor.get(), SIGNAL(audioDataPrepare(QByteArray, int)), SLOT(SendAudioSlot(QByteArray, int)));
 
@@ -320,4 +321,10 @@ void MainWindowController::DeactivateMultipleModeSlot()
 
 	m_view->DeleteFrameLabels();
 	m_view->SetVisibleLabel(true);
+}
+
+void MainWindowController::ViewHideVideoLabelSlot()
+{
+	std::cout << "Hide";
+	m_view->SetVisibleLabel(false);
 }
